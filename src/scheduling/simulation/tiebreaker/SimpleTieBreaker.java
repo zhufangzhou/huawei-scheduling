@@ -1,6 +1,6 @@
-package scheduling.core.simulation.tiebreaker;
+package scheduling.simulation.tiebreaker;
 
-import scheduling.core.simulation.TieBreaker;
+import scheduling.simulation.TieBreaker;
 
 /**
  * A simple tie breaker between two arcs uses the natural comparator.

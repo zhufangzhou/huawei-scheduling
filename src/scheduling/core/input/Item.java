@@ -1,7 +1,7 @@
 package scheduling.core.input;
 
 import org.apache.commons.math3.util.Pair;
-import scheduling.core.simulation.Candidate;
+import scheduling.simulation.Candidate;
 
 import java.util.*;
 

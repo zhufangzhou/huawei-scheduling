@@ -1,4 +1,4 @@
-package scheduling.core.simulation;
+package scheduling.simulation;
 
 public abstract class Candidate {
 }

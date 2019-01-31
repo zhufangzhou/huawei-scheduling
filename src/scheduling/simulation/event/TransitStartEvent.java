@@ -1,11 +1,11 @@
-package scheduling.core.simulation.event;
+package scheduling.simulation.event;
 
 import javafx.util.Pair;
 import scheduling.core.input.*;
 import scheduling.core.output.TransitInstruction;
-import scheduling.core.simulation.Event;
-import scheduling.core.simulation.Simulator;
-import scheduling.core.simulation.State;
+import scheduling.simulation.Event;
+import scheduling.simulation.Simulator;
+import scheduling.simulation.State;
 
 import java.util.Map;
 

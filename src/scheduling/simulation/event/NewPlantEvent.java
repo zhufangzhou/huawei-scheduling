@@ -1,10 +1,8 @@
-package scheduling.core.simulation.event;
+package scheduling.simulation.event;
 
 import scheduling.core.input.Plant;
-import scheduling.core.simulation.Event;
-import scheduling.core.simulation.Simulator;
-
-import java.util.Map;
+import scheduling.simulation.Event;
+import scheduling.simulation.Simulator;
 
 public class NewPlantEvent extends Event {
     private Plant plant;

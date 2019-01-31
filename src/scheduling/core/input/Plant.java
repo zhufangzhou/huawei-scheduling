@@ -1,6 +1,6 @@
 package scheduling.core.input;
 
-import scheduling.core.simulation.Candidate;
+import scheduling.simulation.Candidate;
 
 import java.util.ArrayList;
 import java.util.HashMap;

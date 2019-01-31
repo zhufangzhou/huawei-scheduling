@@ -1,4 +1,4 @@
-package scheduling.core.simulation;
+package scheduling.simulation;
 
 import io.ExcelProcessor;
 import org.apache.commons.math3.util.Pair;
@@ -8,7 +8,7 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import scheduling.core.Environment;
 import scheduling.core.input.*;
-import scheduling.core.simulation.event.*;
+import scheduling.simulation.event.*;
 
 import java.io.File;
 import java.util.*;

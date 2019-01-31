@@ -1,9 +1,9 @@
-package scheduling.core.simulation.event;
+package scheduling.simulation.event;
 
 import scheduling.core.input.Demand;
 import scheduling.core.input.Item;
-import scheduling.core.simulation.Event;
-import scheduling.core.simulation.Simulator;
+import scheduling.simulation.Event;
+import scheduling.simulation.Simulator;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -1,4 +1,4 @@
-package scheduling.core.simulation;
+package scheduling.simulation;
 
 public abstract class Event implements Comparable<Event> {
     protected int date;

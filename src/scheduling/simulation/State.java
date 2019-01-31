@@ -1,4 +1,4 @@
-package scheduling.core.simulation;
+package scheduling.simulation;
 
 import scheduling.core.Schedule;
 import scheduling.core.input.Demand;
