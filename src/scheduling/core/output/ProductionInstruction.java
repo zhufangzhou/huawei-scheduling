@@ -2,7 +2,6 @@ package scheduling.core.output;
 
 import scheduling.core.input.Item;
 import scheduling.core.input.Production;
-import scheduling.core.simulation.State;
 
 public class ProductionInstruction extends Instruction {
     private Production production;

@@ -1,8 +1,6 @@
-package scheduling.core.simulation.poolfilter;
+package scheduling.simulation.poolfilter;
 
-import scheduling.core.simulation.PoolFilter;
-
-import java.util.List;
+import scheduling.simulation.PoolFilter;
 
 /**
  * The identity pool filter does nothing, but simply returns the pool.

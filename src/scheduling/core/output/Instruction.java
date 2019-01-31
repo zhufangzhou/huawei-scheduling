@@ -1,7 +1,6 @@
 package scheduling.core.output;
 
 import scheduling.core.input.Item;
-import scheduling.core.simulation.State;
 
 public abstract class Instruction implements Comparable<Instruction> {
     private int startDate;

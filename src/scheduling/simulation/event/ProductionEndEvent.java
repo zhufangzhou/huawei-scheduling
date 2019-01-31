@@ -1,10 +1,9 @@
-package scheduling.core.simulation.event;
+package scheduling.simulation.event;
 
 import scheduling.core.input.*;
 import scheduling.core.output.ProductionInstruction;
-import scheduling.core.simulation.Event;
-import scheduling.core.simulation.Simulator;
-import scheduling.core.simulation.State;
+import scheduling.simulation.Event;
+import scheduling.simulation.Simulator;
 
 import java.util.Map;
 
