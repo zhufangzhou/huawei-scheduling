@@ -31,13 +31,7 @@ public class TransitEndEvent extends Event {
         Plant plant = instruction.getToPlant();
         int quantity = instruction.getQuantity();
 
-        Map<Plant, Integer> map = simulator.getState().getInventoryMap().get(item);
-
-        int old = 0;
-        if (map.containsKey(plant))
-            old = map.get(plant);
-
-        map.put(plant, old+quantity);
+        simulator.getState().addInventory(item, plant, quantity);
     }
 
     @Override

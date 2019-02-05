@@ -107,4 +107,26 @@ public class State {
     public void setTotalDelay(int totalDelay) {
         this.totalDelay = totalDelay;
     }
+
+    public void addInventory(Item item, Plant plant, int quantity) {
+        Map<Plant, Integer> itemInvMap = inventoryMap.get(item);
+
+        int oldQuantity = 0;
+        if (itemInvMap.containsKey(plant))
+            oldQuantity = itemInvMap.get(plant);
+
+        itemInvMap.put(plant, oldQuantity+quantity);
+    }
+
+    public void reduceInventory(Item item, Plant plant, int quantity) {
+        Map<Plant, Integer> itemInvMap = inventoryMap.get(item);
+
+        int oldQuantity = itemInvMap.get(plant);
+
+        if (oldQuantity == quantity) {
+            itemInvMap.remove(plant);
+        } else {
+            itemInvMap.put(plant, oldQuantity-quantity);
+        }
+    }
 }

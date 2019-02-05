@@ -23,7 +23,7 @@ public class TransitStartEvent extends Event {
 
     /**
      * Start a transit.
-     * (1) Decrease the item's inventory at the source plant.
+     * (1) Reduce the item's inventory at the source plant.
      * (2) Add a transit cost.
      * (3) Add the transit instruction into the schedule.
      * @param simulator the simulator.
@@ -36,9 +36,8 @@ public class TransitStartEvent extends Event {
         int quantity = instruction.getQuantity();
 
         State state = simulator.getState();
-        Map<Plant, Integer> map = state.getInventoryMap().get(item);
-        int oldInv = map.get(fromPlant);
-        map.put(fromPlant, oldInv-quantity);
+
+        state.reduceInventory(item, fromPlant, quantity);
 
         double oldCost = state.getTransitCost();
         Pair<Plant, Plant> plantPair = new Pair<>(fromPlant, toPlant);

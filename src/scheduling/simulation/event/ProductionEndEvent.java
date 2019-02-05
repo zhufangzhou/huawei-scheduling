@@ -31,11 +31,7 @@ public class ProductionEndEvent extends Event {
         Plant plant = production.getPlant();
         int quantity = instruction.getQuantity();
 
-        Map<Plant, Integer> map = simulator.getState().getInventoryMap().get(item);
-        int oldInv = 0;
-        if (map.containsKey(plant))
-            oldInv = map.get(plant);
-        map.put(plant, oldInv+quantity);
+        simulator.getState().addInventory(item, plant, quantity);
     }
 
     @Override
