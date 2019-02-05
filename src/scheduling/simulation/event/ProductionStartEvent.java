@@ -39,15 +39,11 @@ public class ProductionStartEvent extends Event {
         State state = simulator.getState();
         int date = state.getDate();
 
-        Map<Item, Map<Plant, Integer>> inventoryMap = state.getInventoryMap();
-
         for (Bom bom : production.getAssembly()) {
             Item component = bom.getComponent();
             int n = bom.getQuantity();
 
-            Map<Plant, Integer> map = inventoryMap.get(component);
-            int oldInv = map.get(plant);
-            map.put(plant, oldInv-n*quantity);
+            state.reduceInventory(component, plant, n*quantity);
         }
 
         Capacity capacity = machineSet.getCapacityMap().get(date);

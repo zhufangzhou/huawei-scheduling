@@ -39,9 +39,7 @@ public class SupplyEvent extends Event {
         int oldDelay = itemDelayMap.get(date);
         itemDelayMap.put(date, oldDelay-quantity);
 
-        Map<Plant, Integer> inventory = state.getInventoryMap().get(item);
-        int oldInv = inventory.get(plant);
-        inventory.put(plant, oldInv-quantity);
+        state.reduceInventory(item, plant, quantity);
 
         state.getSchedule().getSupplySchedule().add(instruction);
     }

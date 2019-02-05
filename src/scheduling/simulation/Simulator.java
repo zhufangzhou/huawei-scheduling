@@ -14,17 +14,30 @@ import java.io.File;
 import java.util.*;
 
 public class Simulator {
+    public static final int MAX_PERIOD = 180; // the maximal scheduling period: 60 days
+
     private Environment env;
     private Rule rule;
     private State state;
-    private PriorityQueue<Event> eventQueue;
+    private Map<Integer, List<Event>> envUpdateEventMap;
+    private Map<Integer, List<Event>> schedulingEventMap;
 
     public Simulator(int startDate, Environment env, Rule rule) {
         this.env = env;
         this.rule = rule;
 
         state = new State(startDate);
-        eventQueue = new PriorityQueue<>();
+        envUpdateEventMap = new HashMap<>();
+        schedulingEventMap = new HashMap<>();
+        int currDate = startDate;
+        int count = 0;
+        while (count < MAX_PERIOD) {
+            envUpdateEventMap.put(currDate, new ArrayList<>());
+            schedulingEventMap.put(currDate, new ArrayList<>());
+
+            currDate = TimePeriod.nextDate(currDate);
+            count ++;
+        }
     }
 
     public Environment getEnvironment() {
@@ -39,8 +52,12 @@ public class Simulator {
         return state;
     }
 
-    public PriorityQueue<Event> getEventQueue() {
-        return eventQueue;
+    public Map<Integer, List<Event>> getEnvUpdateEventMap() {
+        return envUpdateEventMap;
+    }
+
+    public Map<Integer, List<Event>> getSchedulingEventMap() {
+        return schedulingEventMap;
     }
 
     public void run() {
@@ -241,6 +258,63 @@ public class Simulator {
         // set the starting date
         int currDate = startDate;
 
+        // read the first file for the initial work-in-process and frozen productions
+        try {
+            XSSFWorkbook wb = new XSSFWorkbook(files.get(0));
+            XSSFSheet sheet;
+            XSSFRow row;
+
+            DataFormatter df = new DataFormatter();
+
+            // read the time periods
+            Map<Integer, TimePeriod> timePeriodMap = new HashMap<>();
+            sheet = wb.getSheetAt(ExcelProcessor.TIME_PERIOD_IDX);
+            for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
+                row = sheet.getRow(i);
+
+                int date = Integer.valueOf(df.formatCellValue(row.getCell(0)));
+                int week = Integer.valueOf(df.formatCellValue(row.getCell(2)));
+                int length = Integer.valueOf(df.formatCellValue(row.getCell(3)));
+
+                TimePeriod timePeriod = new TimePeriod(date, week, length);
+                timePeriodMap.put(date, timePeriod);
+            }
+
+            // event: work-in-process production finish
+            sheet = wb.getSheetAt(ExcelProcessor.WORK_IN_PROCESS_IDX);
+            for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
+                row = sheet.getRow(i);
+
+                Item item = env.getItemMap().get(df.formatCellValue(row.getCell(0)));
+                int date = Integer.valueOf(df.formatCellValue(row.getCell(1)));
+                int quantity = Integer.valueOf(df.formatCellValue(row.getCell(2)));
+                Plant plant = env.getPlantMap().get(df.formatCellValue(row.getCell(3)));
+
+                Event event = new FrozenWorkEndEvent(date, item, plant, quantity);
+                simulator.getSchedulingEventMap().get(date).add(event);
+            }
+
+            // frozon productions finish
+            sheet = wb.getSheetAt(ExcelProcessor.FROZEN_PROD_IDX);
+            for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
+                row = sheet.getRow(i);
+
+                Item item = env.getItemMap().get(df.formatCellValue(row.getCell(0)));
+                Plant plant = env.getPlantMap().get(df.formatCellValue(row.getCell(1)));
+                int date = Integer.valueOf(df.formatCellValue(row.getCell(2)));
+                TimePeriod timePeriod = timePeriodMap.get(date);
+                int quantity = Integer.valueOf(df.formatCellValue(row.getCell(3)));
+
+                Event event = new FrozenWorkEndEvent(timePeriod.getEndDate(), item, plant, quantity);
+                simulator.getSchedulingEventMap().get(timePeriod.getEndDate()).add(event);
+            }
+
+            // Closing the workbook
+            wb.close();
+        } catch(Exception ioe) {
+            ioe.printStackTrace();
+        }
+
         // create the events
         for (int k = 0; k < files.size(); k++) {
             File file = files.get(k);
@@ -280,7 +354,7 @@ public class Simulator {
 
                     Plant plant = plantMap.get(name);
                     Event event = new NewPlantEvent(currDate, plant);
-                    simulator.getEventQueue().add(event);
+                    simulator.getEnvUpdateEventMap().get(currDate).add(event);
 
                 }
 
@@ -295,7 +369,7 @@ public class Simulator {
                         continue;
 
                     Event event = new NewItemEvent(currDate, item);
-                    simulator.getEventQueue().add(event);
+                    simulator.getEnvUpdateEventMap().get(currDate).add(event);
                 }
 
                 // event: update item demands
@@ -312,7 +386,7 @@ public class Simulator {
                     Demand dem = new Demand(odem, fdem);
 
                     Event event = new DemandUpdateEvent(currDate, item, timePeriod.getEndDate(), dem);
-                    simulator.getEventQueue().add(event);
+                    simulator.getEnvUpdateEventMap().get(currDate).add(event);
                 }
 
                 // event: update the capacity of the machine sets
@@ -338,7 +412,7 @@ public class Simulator {
 
                 for (MachineSet set : capacityMap.keySet()) {
                     Event event = new CapacityUpdateEvent(currDate, set, capacityMap.get(set));
-                    simulator.getEventQueue().add(event);
+                    simulator.getEnvUpdateEventMap().get(currDate).add(event);
                 }
 
                 // event: the raw material po for today
@@ -352,32 +426,27 @@ public class Simulator {
                     Plant plant = plantMap.get(df.formatCellValue(row.getCell(3)));
 
                     Event event = new PoEvent(date, item, plant, quantity);
-                    simulator.getEventQueue().add(event);
+                    simulator.getEnvUpdateEventMap().get(date).add(event);
                 }
-
-                // event: work-in-process production finish
-                // only read the first one, and optimise the remaining
-
-                // frozon productions finish
-                // only read the first one, and create new ones from optimisation
-
 
                 // Closing the workbook
                 wb.close();
             } catch(Exception ioe) {
                 ioe.printStackTrace();
             }
+
+            currDate ++;
         }
 
-        return null;
+        return simulator;
     }
 
     /**
-     * Initialise from the initial file.
-     * Initialise the plants in the system, and the initial inventories.
-     * @param file the initial file.
+     * Read frozen days from the Excel file.
+     * Merge the frozen days into the plants.
+     * @param file the frozen day file.
      */
-    public void initialiseFromFile(File file) {
+    public void readFrozenDays(File file) {
         try {
             XSSFWorkbook wb = new XSSFWorkbook(file);
             XSSFSheet sheet;
@@ -385,35 +454,18 @@ public class Simulator {
 
             DataFormatter df = new DataFormatter();
 
-            // initialise the plant map
-            sheet = wb.getSheetAt(ExcelProcessor.PLANT_IDX);
+            sheet = wb.getSheetAt(0);
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
-                String name = df.formatCellValue(row.getCell(0));
+                Plant plant = env.getPlantMap().get(df.formatCellValue(row.getCell(0)));
+                ItemType itemType = ItemType.get(df.formatCellValue(row.getCell(1)));
+                int frozenDays = Integer.valueOf(df.formatCellValue(row.getCell(2)));
 
-                Plant plant = env.getPlantMap().get(name);
-                state.getPlantMap().put(plant.getName(), plant);
+                plant.getFrozenDaysMap().put(itemType, frozenDays);
             }
 
-            // initialise item inventory
-            sheet = wb.getSheetAt(ExcelProcessor.INIT_INVENTORY_IDX);
-            for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
-                row = sheet.getRow(i);
-
-                Item item = env.getItemMap().get(df.formatCellValue(row.getCell(0)));
-                int quantity = Integer.valueOf(df.formatCellValue(row.getCell(1)));
-                Plant plant = env.getPlantMap().get(df.formatCellValue(row.getCell(2)));
-
-                Map<Plant, Integer> itemInvMap = state.getInventoryMap().get(item);
-                if (itemInvMap == null) {
-                    itemInvMap = new HashMap<>();
-                    state.getInventoryMap().put(item, itemInvMap);
-                }
-                itemInvMap.put(plant, quantity);
-            }
-
-            // Closing the workbook
+            // closing the workbook
             wb.close();
         } catch(Exception ioe) {
             ioe.printStackTrace();
@@ -432,7 +484,7 @@ public class Simulator {
         }
 
         Simulator simulator = Simulator.readFromFiles(startDate, files);
-
+        simulator.readFrozenDays(new File("data/o_vuw_frozen_days.xlsx"));
 
 //        File file = new File("data/e_vuw_test_multi_plant_01.xlsx");
 //        Environment env = Environment.readFromFile(file);

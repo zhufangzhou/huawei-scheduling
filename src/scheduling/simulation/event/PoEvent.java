@@ -39,18 +39,7 @@ public class PoEvent extends Event {
      */
     @Override
     public void trigger(Simulator simulator) {
-        Map<Item, Map<Plant, Integer>> inventoryMap = simulator.getState().getInventoryMap();
-        Map<Plant, Integer> itemInvMap = inventoryMap.get(item);
-
-        if (itemInvMap == null) {
-            itemInvMap = new HashMap<>();
-            inventoryMap.put(item, itemInvMap);
-        }
-
-        int oldInv = 0;
-        if (itemInvMap.containsKey(plant))
-            oldInv = itemInvMap.get(plant);
-        itemInvMap.put(plant, oldInv+quantity);
+        simulator.getState().addInventory(item, plant, quantity);
     }
 
     @Override
