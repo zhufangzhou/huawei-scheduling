@@ -26,22 +26,21 @@ public class SupplyEvent extends Event {
      * (1) Reduce the delay amount of supplied item at that day.
      * (2) Reduce the inventory of the supplied item at the plant.
      * (3) Add the supply instruction into the schedule.
-     * @param simulator the simulator.
+     * @param state the state.
      */
     @Override
-    public void trigger(Simulator simulator) {
+    public void trigger(State state) {
         Item item = instruction.getItem();
         Plant plant = instruction.getPlant();
         int quantity = instruction.getQuantity();
 
-        State state = simulator.getState();
-        Map<Integer, Integer> itemDelayMap = state.getDelayMap().get(item);
-        int oldDelay = itemDelayMap.get(date);
-        itemDelayMap.put(date, oldDelay-quantity);
-
-        state.reduceInventory(item, plant, quantity);
-
-        state.getSchedule().getSupplySchedule().add(instruction);
+//        Map<Integer, Integer> itemDelayMap = state.getDelayMap().get(item);
+//        int oldDelay = itemDelayMap.get(date);
+//        itemDelayMap.put(date, oldDelay-quantity);
+//
+//        state.reduceInventory(item, plant, quantity);
+//
+//        state.getSchedule().getSupplySchedule().add(instruction);
     }
 
     @Override

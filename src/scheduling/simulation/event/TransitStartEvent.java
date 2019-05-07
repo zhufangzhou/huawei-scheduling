@@ -12,8 +12,8 @@ import java.util.Map;
 public class TransitStartEvent extends Event {
     private TransitInstruction instruction;
 
-    public TransitStartEvent(int date, TransitInstruction instruction) {
-        super(date);
+    public TransitStartEvent(int dateId, TransitInstruction instruction) {
+        super(dateId);
         this.instruction = instruction;
     }
 
@@ -26,27 +26,25 @@ public class TransitStartEvent extends Event {
      * (1) Reduce the item's inventory at the source plant.
      * (2) Add a transit cost.
      * (3) Add the transit instruction into the schedule.
-     * @param simulator the simulator.
+     * @param state the state.
      */
     @Override
-    public void trigger(Simulator simulator) {
+    public void trigger(State state) {
         Item item = instruction.getItem();
         Plant fromPlant = instruction.getFromPlant();
         Plant toPlant = instruction.getToPlant();
         int quantity = instruction.getQuantity();
 
-        State state = simulator.getState();
-
-        state.reduceInventory(item, fromPlant, quantity);
-
-        double oldCost = state.getTransitCost();
-        Pair<Plant, Plant> plantPair = new Pair<>(fromPlant, toPlant);
-        int unitTransitCost = simulator.getEnvironment().getTransitCostMap().get(plantPair);
-        int duration = instruction.getEndDate()-instruction.getStartDate()+1;
-        double addedCost = unitTransitCost * quantity * duration;
-        state.setTransitCost(oldCost+addedCost);
-
-        state.getSchedule().getTransitSchedule().add(instruction);
+//        state.reduceInventory(item, fromPlant, quantity);
+//
+//        double oldCost = state.getTransitCost();
+//        Pair<Plant, Plant> plantPair = new Pair<>(fromPlant, toPlant);
+//        int unitTransitCost = simulator.getEnvironment().getTransitCostMap().get(plantPair);
+//        int duration = instruction.getEndDate()-instruction.getStartDate()+1;
+//        double addedCost = unitTransitCost * quantity * duration;
+//        state.setTransitCost(oldCost+addedCost);
+//
+//        state.getSchedule().getTransitSchedule().add(instruction);
     }
 
     @Override

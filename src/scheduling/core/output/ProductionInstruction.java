@@ -29,7 +29,7 @@ public class ProductionInstruction extends Instruction {
         this.lots -= removedLots;
     }
 
-    public int getQuantity() {
+    public long getQuantity() {
         return lots * production.getLotSize();
     }
 

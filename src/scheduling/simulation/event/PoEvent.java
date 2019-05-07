@@ -4,6 +4,7 @@ import scheduling.core.input.Item;
 import scheduling.core.input.Plant;
 import scheduling.simulation.Event;
 import scheduling.simulation.Simulator;
+import scheduling.simulation.State;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -11,10 +12,10 @@ import java.util.Map;
 public class PoEvent extends Event {
     private Item item;
     private Plant plant;
-    private int quantity;
+    private long quantity;
 
-    public PoEvent(int date, Item item, Plant plant, int quantity) {
-        super(date);
+    public PoEvent(int dateId, Item item, Plant plant, long quantity) {
+        super(dateId);
         this.item = item;
         this.plant = plant;
         this.quantity = quantity;
@@ -28,18 +29,18 @@ public class PoEvent extends Event {
         return plant;
     }
 
-    public int getQuantity() {
+    public long getQuantity() {
         return quantity;
     }
 
     /**
      * Buy some items at a plant.
      * (1) Increase the inventory of the item at the plant.
-     * @param simulator the simulator.
+     * @param state the state.
      */
     @Override
-    public void trigger(Simulator simulator) {
-        simulator.getState().addInventory(item, plant, quantity);
+    public void trigger(State state) {
+
     }
 
     @Override

@@ -3,25 +3,25 @@ package scheduling.simulation.event;
 import scheduling.core.input.Item;
 import scheduling.simulation.Event;
 import scheduling.simulation.Simulator;
+import scheduling.simulation.State;
 
 import java.util.HashMap;
 
 public class NewItemEvent extends Event {
     private Item item;
 
-    public NewItemEvent(int date, Item item) {
-        super(date);
+    public NewItemEvent(int dateId, Item item) {
+        super(dateId);
         this.item = item;
     }
 
     /**
      * A new item comes into the system.
-     * Set its initial inventory.
-     * @param simulator the simulator.
+     * @param state the state.
      */
     @Override
-    public void trigger(Simulator simulator) {
-        simulator.getState().getInventoryMap().put(item, new HashMap<>(item.getInitInventoryMap()));
+    public void trigger(State state) {
+
     }
 
     @Override
