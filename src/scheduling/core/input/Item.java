@@ -21,10 +21,10 @@ public class Item extends Candidate implements Comparable<Item> {
     private Map<Plant, Production> productionMap;
     private List<ProportionConstraint> proportionConstraints;
     private Map<Plant, MachineSet> machineMap;
-
-    private Map<TimePeriod, Demand> demandMap;
-    private Map<Plant, Integer> initInventoryMap;
-    private Map<Plant, Map<TimePeriod, Integer>> frozenProductionMap;
+    private Map<Integer, Long> orderDemandMap;
+    private Map<Integer, Long> forecastDemandMap;
+    private Map<Plant, Long> initInventoryMap;
+    private Map<Plant, Map<Integer, Long>> frozenProductionMap;
 
     public Item(String id, ItemType type, double materialCost, ProductCategory productCategory, double holdingCost) {
         this.id = id;
@@ -38,7 +38,8 @@ public class Item extends Candidate implements Comparable<Item> {
         proportionConstraints = new LinkedList<>();
         machineMap = new HashMap<>();
 
-        demandMap = new HashMap<>();
+        orderDemandMap = new HashMap<>();
+        forecastDemandMap = new HashMap<>();
         initInventoryMap = new HashMap<>();
         frozenProductionMap = new HashMap<>();
     }
@@ -83,15 +84,19 @@ public class Item extends Candidate implements Comparable<Item> {
         return machineMap;
     }
 
-    public Map<TimePeriod, Demand> getDemandMap() {
-        return demandMap;
+    public Map<Integer, Long> getOrderDemandMap() {
+        return orderDemandMap;
     }
 
-    public Map<Plant, Integer> getInitInventoryMap() {
+    public Map<Integer, Long> getForecastDemandMap() {
+        return forecastDemandMap;
+    }
+
+    public Map<Plant, Long> getInitInventoryMap() {
         return initInventoryMap;
     }
 
-    public Map<Plant, Map<TimePeriod, Integer>> getFrozenProductionMap() {
+    public Map<Plant, Map<Integer, Long>> getFrozenProductionMap() {
         return frozenProductionMap;
     }
 

@@ -1,132 +1,87 @@
 package scheduling.simulation;
 
+import com.sun.tools.doclint.Env;
+import scheduling.core.Environment;
 import scheduling.core.Schedule;
-import scheduling.core.input.Demand;
 import scheduling.core.input.Item;
 import scheduling.core.input.Plant;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * The current state of the scheduler.
+ * In the static scheduling environment, it is used to represent the static problem.
+ * In the dynamic scheduling environment, it is a state during the simulation.
+ */
+
 public class State {
-    private int date; // the current date
+    private Environment env; // the environment
 
-    private Schedule schedule; // the actual schedule
+    private int startDate; // the starting date, used to calculate the day id
+    private int dateIndex; // the current date index
 
-    private Map<String, Plant> plantMap; // the plants in the system
-    private Map<Item, Map<Integer, Demand>> demandMap; // the demand of the items in the system
-    private Map<Item, Map<Plant, Integer>> inventoryMap; // the inventory of each item at each plant
-    private Map<Item, Map<Integer, Integer>> delayMap; // the delay of each item in each past date
-    private double inventoryCost;
-    private double productionCost;
-    private double transitCost;
-    private int totalDelay;
+    private Schedule plannedSchedule; // the planned schedule that is not executed yet.
+    private Schedule executedSchedule; // the executed schedule so far (during the simulation)
 
-    public State(int startDate) {
-        this.date = startDate;
-        this.schedule = new Schedule();
-
-        plantMap = new HashMap<>();
-        demandMap = new HashMap<>();
-        inventoryMap = new HashMap<>();
-        delayMap = new HashMap<>();
-
-        inventoryCost = 0d;
-        productionCost = 0d;
-        transitCost = 0d;
+    public State(Environment env, int startDate, Schedule plannedSchedule, Schedule executedSchedule) {
+        this.env = env;
+        this.startDate = startDate;
+        this.dateIndex = 0;
+        this.plannedSchedule = plannedSchedule;
+        this.executedSchedule = executedSchedule;
     }
 
-    public int getDate() {
-        return date;
+    /**
+     * Read the state from a file and the start date.
+     * @param file the file.
+     * @param startDate the start date.
+     * @return the state.
+     */
+    public static State readFromFile(File file, int startDate) {
+        Environment env = Environment.readFromFile(file, startDate);
+
+        return new State(env, startDate, new Schedule(), new Schedule());
     }
 
-    public Schedule getSchedule() {
-        return schedule;
+    public Environment getEnv() {
+        return env;
     }
 
-    public Map<String, Plant> getPlantMap() {
-        return plantMap;
+    public int getStartDate() {
+        return startDate;
     }
 
-    public Map<Item, Map<Integer, Demand>> getDemandMap() {
-        return demandMap;
+    public int getDateIndex() {
+        return dateIndex;
     }
 
-    public Map<Item, Map<Plant, Integer>> getInventoryMap() {
-        return inventoryMap;
+    public Schedule getPlannedSchedule() {
+        return plannedSchedule;
     }
 
-    public Map<Item, Map<Integer, Integer>> getDelayMap() {
-        return delayMap;
+    public Schedule getExecutedSchedule() {
+        return executedSchedule;
     }
 
-    public double getInventoryCost() {
-        return inventoryCost;
+    public void setEnv(Environment env) {
+        this.env = env;
     }
 
-    public double getProductionCost() {
-        return productionCost;
+    public void setStartDate(int startDate) {
+        this.startDate = startDate;
     }
 
-    public double getTransitCost() {
-        return transitCost;
+    public void setDateIndex(int dateIndex) {
+        this.dateIndex = dateIndex;
     }
 
-    public int getTotalDelay() {
-        return totalDelay;
+    public void setPlannedSchedule(Schedule plannedSchedule) {
+        this.plannedSchedule = plannedSchedule;
     }
 
-    public void setDate(int date) {
-        this.date = date;
-    }
-
-    public void setSchedule(Schedule schedule) {
-        this.schedule = schedule;
-    }
-
-    public void setInventoryMap(Map<Item, Map<Plant, Integer>> inventoryMap) {
-        this.inventoryMap = inventoryMap;
-    }
-
-    public void setDelayMap(Map<Item, Map<Integer, Integer>> delayMap) {
-        this.delayMap = delayMap;
-    }
-
-    public void setInventoryCost(double inventoryCost) {
-        this.inventoryCost = inventoryCost;
-    }
-
-    public void setProductionCost(double productionCost) {
-        this.productionCost = productionCost;
-    }
-
-    public void setTransitCost(double transitCost) {
-        this.transitCost = transitCost;
-    }
-
-    public void setTotalDelay(int totalDelay) {
-        this.totalDelay = totalDelay;
-    }
-
-    public void addInventory(Item item, Plant plant, int quantity) {
-        Map<Plant, Integer> itemInvMap = inventoryMap.get(item);
-
-        int oldQuantity = 0;
-        if (itemInvMap.containsKey(plant))
-            oldQuantity = itemInvMap.get(plant);
-
-        itemInvMap.put(plant, oldQuantity+quantity);
-    }
-
-    public void reduceInventory(Item item, Plant plant, int quantity) {
-        Map<Plant, Integer> itemInvMap = inventoryMap.get(item);
-
-        int oldQuantity = itemInvMap.get(plant);
-
-        if (oldQuantity == quantity) {
-            itemInvMap.remove(plant);
-        } else {
-            itemInvMap.put(plant, oldQuantity-quantity);
-        }
+    public void setExecutedSchedule(Schedule executedSchedule) {
+        this.executedSchedule = executedSchedule;
     }
 }

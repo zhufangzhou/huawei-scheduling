@@ -1,24 +1,24 @@
 package scheduling.simulation;
 
 public abstract class Event implements Comparable<Event> {
-    protected int date;
+    protected int dateId;
 
-    public Event(int date) {
-        this.date = date;
+    public Event(int dateId) {
+        this.dateId = dateId;
     }
 
-    public int getDate() {
-        return date;
+    public int getDateId() {
+        return dateId;
     }
 
-    public abstract void trigger(Simulator simulator);
+    public abstract void trigger(State state);
 
     @Override
     public int compareTo(Event o) {
-        if (date < o.date)
+        if (dateId < o.dateId)
             return -1;
 
-        if (date > o.date)
+        if (dateId > o.dateId)
             return 1;
 
         return 0;

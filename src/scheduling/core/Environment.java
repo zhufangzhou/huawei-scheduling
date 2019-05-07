@@ -89,10 +89,11 @@ public class Environment {
 
     /**
      * Read the environment from a .xlsx file.
-     * @param file the .xlsx file
-     * @return the environment
+     * @param file the .xlsx file.
+     * @param startDate the start date.
+     * @return the environment.
      */
-    public static Environment readFromFile(File file) {
+    public static Environment readFromFile(File file, int startDate) {
         Environment environment = null;
 
         try {
@@ -182,24 +183,24 @@ public class Environment {
             }
 
             // Read the demands and merge into items
-            int today = Integer.MAX_VALUE;
-
             sheet = wb.getSheetAt(ExcelProcessor.DEMAND_IDX);
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
                 Item item = itemMap.get(df.formatCellValue(row.getCell(0)));
                 int date = Integer.valueOf(df.formatCellValue(row.getCell(1)));
-                int odem = Integer.valueOf(df.formatCellValue(row.getCell(2)));
-                int fdem = Integer.valueOf(df.formatCellValue(row.getCell(3)));
-
-                if (date < today)
-                    today = date;
+                long odem = Long.valueOf(df.formatCellValue(row.getCell(2)));
+                long fdem = Long.valueOf(df.formatCellValue(row.getCell(3)));
 
                 TimePeriod timePeriod = timePeriodMap.get(date);
-                Demand dem = new Demand(odem, fdem);
+                int dueDate = timePeriod.dueDate();
+                int dueDateIndex = TimePeriod.gap(startDate, dueDate);
 
-                item.getDemandMap().put(timePeriod, dem);
+                if (odem > 0)
+                    item.getOrderDemandMap().put(dueDateIndex, odem);
+
+                if (fdem > 0)
+                    item.getForecastDemandMap().put(dueDateIndex, fdem);
             }
 
             // Read the transit information and merge into plants and item
@@ -237,8 +238,8 @@ public class Environment {
                 int date = Integer.valueOf(df.formatCellValue(row.getCell(1)));
                 double capacity = Double.valueOf(df.formatCellValue(row.getCell(4)));
 
-                TimePeriod timePeriod = timePeriodMap.get(date);
-                set.putCapacity(timePeriod, new Capacity(capacity));
+                int dateIndex = TimePeriod.gap(startDate, date);
+                set.putCapacity(dateIndex, capacity);
             }
 
             // Read the initial inventories and merge into plants
@@ -247,7 +248,7 @@ public class Environment {
                 row = sheet.getRow(i);
 
                 Item item = itemMap.get(df.formatCellValue(row.getCell(0)));
-                int quantity = Integer.valueOf(df.formatCellValue(row.getCell(1)));
+                long quantity = Long.valueOf(df.formatCellValue(row.getCell(1)));
                 Plant plant = plantMap.get(df.formatCellValue(row.getCell(2)));
 
                 item.getInitInventoryMap().put(plant, quantity);
@@ -310,10 +311,11 @@ public class Environment {
 
                 Item item = itemMap.get(df.formatCellValue(row.getCell(0)));
                 int date = Integer.valueOf(df.formatCellValue(row.getCell(1)));
-                int quantity = Integer.valueOf(df.formatCellValue(row.getCell(2)));
+                long quantity = Long.valueOf(df.formatCellValue(row.getCell(2)));
                 Plant plant = plantMap.get(df.formatCellValue(row.getCell(3)));
 
-                plant.putWorkInProcess(item, date, quantity);
+                int dateIndex = TimePeriod.gap(startDate, date);
+                plant.putWorkInProcess(item, dateIndex, quantity);
             }
 
             // Read the item sets and merge into items
@@ -334,18 +336,20 @@ public class Environment {
 
                 Item item = itemMap.get(df.formatCellValue(row.getCell(0)));
                 Plant plant = plantMap.get(df.formatCellValue(row.getCell(1)));
-                TimePeriod timePeriod = timePeriodMap.get(df.formatCellValue(row.getCell(2)));
-                int quantity = Integer.valueOf(df.formatCellValue(row.getCell(3)));
+                int date = Integer.valueOf(df.formatCellValue(row.getCell(2)));
+                TimePeriod timePeriod = timePeriodMap.get(date);
+                long quantity = Long.valueOf(df.formatCellValue(row.getCell(3)));
 
-                Map<Plant, Map<TimePeriod, Integer>> frozenProdMap = item.getFrozenProductionMap();
-                Map<TimePeriod, Integer> plantFrozenProdMap = frozenProdMap.get(plant);
+                Map<Plant, Map<Integer, Long>> frozenProdMap = item.getFrozenProductionMap();
+                Map<Integer, Long> plantFrozenProdMap = frozenProdMap.get(plant);
 
                 if (plantFrozenProdMap == null) {
                     plantFrozenProdMap = new HashMap<>();
                     frozenProdMap.put(plant, plantFrozenProdMap);
                 }
 
-                plantFrozenProdMap.put(timePeriod, quantity);
+                int dateIndex = TimePeriod.gap(startDate, timePeriod.getDate());
+                plantFrozenProdMap.put(dateIndex, quantity);
             }
 
             // Read the raw material po and merge into plants
@@ -354,11 +358,13 @@ public class Environment {
                 row = sheet.getRow(i);
 
                 Item item = itemMap.get(df.formatCellValue(row.getCell(0)));
-                int quantity = Integer.valueOf(df.formatCellValue(row.getCell(1)));
+                long quantity = Integer.valueOf(df.formatCellValue(row.getCell(1)));
                 int date = Integer.valueOf(df.formatCellValue(row.getCell(2)));
                 Plant plant = plantMap.get(df.formatCellValue(row.getCell(3)));
 
-                plant.putRawMaterialPo(item, quantity, date);
+                int dateIndex = TimePeriod.gap(startDate, date);
+
+                plant.putRawMaterialPo(item, quantity, dateIndex);
             }
 
             environment =
@@ -374,8 +380,8 @@ public class Environment {
     }
 
     public static void main(String[] args) {
-        File file = new File("data/huawei-input.xlsx");
-        Environment environment = Environment.readFromFile(file);
+        File file = new File("data/e_vuw_test_multi_plant_01.xlsx");
+        Environment environment = Environment.readFromFile(file, 20161203);
 
         System.out.println("finished");
     }

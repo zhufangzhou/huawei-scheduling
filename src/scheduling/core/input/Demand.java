@@ -5,39 +5,39 @@ package scheduling.core.input;
  */
 
 public class Demand {
-    private int orderDemand;
-    private int forecastDemand;
-    private int delayed;
+    private long orderDemand;
+    private long forecastDemand;
+    private long delayed;
 
-    public Demand(int orderDemand, int forecastDemand, int delayed) {
+    public Demand(long orderDemand, long forecastDemand, long delayed) {
         this.orderDemand = orderDemand;
         this.forecastDemand = forecastDemand;
         this.delayed = delayed;
     }
 
-    public Demand(int orderDemand, int forecastDemand) {
+    public Demand(long orderDemand, long forecastDemand) {
         this.orderDemand = orderDemand;
         this.forecastDemand = forecastDemand;
         this.delayed = orderDemand;
     }
 
-    public int getOrderDemand() {
+    public long getOrderDemand() {
         return orderDemand;
     }
 
-    public int getForecastDemand() {
+    public long getForecastDemand() {
         return forecastDemand;
     }
 
-    public void setOrderDemand(int orderDemand) {
+    public void setOrderDemand(long orderDemand) {
         this.orderDemand = orderDemand;
     }
 
-    public void setForecastDemand(int forecastDemand) {
+    public void setForecastDemand(long forecastDemand) {
         this.forecastDemand = forecastDemand;
     }
 
-    public void setDelayed(int delayed) {
+    public void setDelayed(long delayed) {
         this.delayed = delayed;
     }
 

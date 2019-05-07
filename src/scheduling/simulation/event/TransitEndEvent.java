@@ -5,14 +5,15 @@ import scheduling.core.input.Plant;
 import scheduling.core.output.TransitInstruction;
 import scheduling.simulation.Event;
 import scheduling.simulation.Simulator;
+import scheduling.simulation.State;
 
 import java.util.Map;
 
 public class TransitEndEvent extends Event {
     private TransitInstruction instruction;
 
-    public TransitEndEvent(int date, TransitInstruction instruction) {
-        super(date);
+    public TransitEndEvent(int dateId, TransitInstruction instruction) {
+        super(dateId);
         this.instruction = instruction;
     }
 
@@ -23,15 +24,15 @@ public class TransitEndEvent extends Event {
     /**
      * Ends a transit.
      * (1) Increase the inventory of the item at the target plant.
-     * @param simulator the simulator.
+     * @param state the state.
      */
     @Override
-    public void trigger(Simulator simulator) {
+    public void trigger(State state) {
         Item item = instruction.getItem();
         Plant plant = instruction.getToPlant();
-        int quantity = instruction.getQuantity();
+        long quantity = instruction.getQuantity();
 
-        simulator.getState().addInventory(item, plant, quantity);
+//        state.addInventory(item, plant, quantity);
     }
 
     @Override
