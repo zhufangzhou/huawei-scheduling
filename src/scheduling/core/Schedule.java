@@ -17,12 +17,18 @@ import java.util.*;
  *
  */
 public class Schedule {
+    private State state; // the state/problem
+    private int startDateId; // the start date id of the schedule
+    private int endDateId; // the end date id of the schedule
+
     private List<ProductionInstruction> productionSchedule;
     private List<TransitInstruction> transitSchedule;
     private List<SupplyInstruction> supplySchedule;
 
     private Map<Integer, Map<Item, Map<Plant, Long>>> inventoryMap;
-    private Map<Integer, Map<Item, Long>> delayMap;
+    private Map<Integer, Map<Item, Long>> orderSupplyMap;
+    private Map<Integer, Map<Item, Long>> forecastSupplyMap;
+    private Map<Integer, Map<Item, Long>> accOrderDemMap; // accumulated order demand each day
 
     private double inventoryCost;
     private double productionCost;
@@ -30,7 +36,7 @@ public class Schedule {
     private long totalDelay;
 
     /**
-     * Construct an empty schedule.
+     * Construct an empty schedule without any other information.
      */
     public Schedule() {
         productionSchedule = new ArrayList<>();
@@ -38,12 +44,38 @@ public class Schedule {
         supplySchedule = new ArrayList<>();
 
         inventoryMap = new HashMap<>();
-        delayMap = new HashMap<>();
+        orderSupplyMap = new HashMap<>();
+        forecastSupplyMap = new HashMap<>();
+        accOrderDemMap = new HashMap<>();
 
         inventoryCost = 0d;
         productionCost = 0d;
         transitCost = 0d;
-        totalDelay = 0;
+        totalDelay = 0l;
+    }
+
+    public State getState() {
+        return state;
+    }
+
+    public void setState(State state) {
+        this.state = state;
+    }
+
+    public int getStartDateId() {
+        return startDateId;
+    }
+
+    public void setStartDateId(int startDateId) {
+        this.startDateId = startDateId;
+    }
+
+    public int getEndDateId() {
+        return endDateId;
+    }
+
+    public void setEndDateId(int endDateId) {
+        this.endDateId = endDateId;
     }
 
     public List<ProductionInstruction> getProductionSchedule() {
@@ -78,12 +110,28 @@ public class Schedule {
         this.inventoryMap = inventoryMap;
     }
 
-    public Map<Integer, Map<Item, Long>> getDelayMap() {
-        return delayMap;
+    public Map<Integer, Map<Item, Long>> getOrderSupplyMap() {
+        return orderSupplyMap;
     }
 
-    public void setDelayMap(Map<Integer, Map<Item, Long>> delayMap) {
-        this.delayMap = delayMap;
+    public void setOrderSupplyMap(Map<Integer, Map<Item, Long>> orderSupplyMap) {
+        this.orderSupplyMap = orderSupplyMap;
+    }
+
+    public Map<Integer, Map<Item, Long>> getForecastSupplyMap() {
+        return forecastSupplyMap;
+    }
+
+    public void setForecastSupplyMap(Map<Integer, Map<Item, Long>> forecastSupplyMap) {
+        this.forecastSupplyMap = forecastSupplyMap;
+    }
+
+    public Map<Integer, Map<Item, Long>> getAccOrderDemMap() {
+        return accOrderDemMap;
+    }
+
+    public void setAccOrderDemMap(Map<Integer, Map<Item, Long>> accOrderDemMap) {
+        this.accOrderDemMap = accOrderDemMap;
     }
 
     public double getInventoryCost() {
@@ -137,6 +185,83 @@ public class Schedule {
             itemInvMap.remove(plant);
         } else {
             itemInvMap.put(plant, oldQuantity-quantity);
+        }
+    }
+
+    /**
+     * Initialise the fields of an empty schedule with the current state/problem.
+     * @param state the current state.
+     */
+    public void initWithState(State state) {
+        this.state = state;
+        this.startDateId = state.getDateIndex();
+        this.endDateId = state.getEnv().getPeriod()-1;
+
+        // set the inventory in the start date based on the initial inventories
+        Map<Item, Map<Plant, Long>> initialInventoryMap = new HashMap<>();
+        for (Item item : state.getEnv().getItemMap().values()) {
+            Map<Plant, Long> map = new HashMap<>();
+            for (Plant plant : item.getInitInventoryMap().keySet()) {
+                long quantity = item.getInitInventoryMap().get(plant);
+
+                if (quantity > 0)
+                    map.put(plant, quantity);
+            }
+            initialInventoryMap.put(item, map);
+        }
+
+        for (int dateId = startDateId; dateId < endDateId; dateId++) {
+            inventoryMap.put(dateId, new HashMap<>(initialInventoryMap));
+        }
+
+        // initialise the accumulated order demand map
+        // the accumulated order demand adds up all the leftover order demands
+        Map<Item, Long> leftover = new HashMap<>();
+        for (int dateId = startDateId; dateId < endDateId; dateId++) {
+            Map<Item, Long> dailyAccOrderDem = new HashMap<>(leftover);
+
+            List<Item> dailyOrderDem = state.getOrderDemMap().get(dateId);
+
+            if (dailyOrderDem != null) {
+                for (Item item : dailyOrderDem) {
+                    if (dailyAccOrderDem.containsKey(item)) {
+                        long old = dailyAccOrderDem.get(item);
+                        dailyAccOrderDem.put(item, old+item.getOrderDemandMap().get(dateId));
+                    } else {
+                        dailyAccOrderDem.put(item, item.getOrderDemandMap().get(dateId));
+                    }
+                }
+            }
+
+            leftover = dailyAccOrderDem;
+
+            accOrderDemMap.put(dateId, dailyAccOrderDem);
+        }
+
+        // calculate the inventory cost by summing up for all the days
+        for (int dateId = startDateId; dateId < endDateId; dateId++) {
+            for (Item item : inventoryMap.get(dateId).keySet()) {
+                long totalInventory = 0;
+
+                for (Plant plant : inventoryMap.get(dateId).get(item).keySet()) {
+                    totalInventory += inventoryMap.get(dateId).get(item).get(plant);
+                }
+
+                inventoryCost += totalInventory * item.getHoldingCost();
+            }
+        }
+
+        // calculate the total delay based on accumulated delay map
+        for (int dateId = startDateId; dateId < endDateId; dateId++) {
+            for (Item item : accOrderDemMap.get(dateId).keySet()) {
+                totalDelay += accOrderDemMap.get(dateId).get(item);
+            }
+        }
+
+        for (int dateId : state.getForecastDemMap().keySet()) {
+            for (Item item : state.getForecastDemMap().get(dateId)) {
+                totalDelay += item.getForecastDemandMap().get(dateId);
+            }
         }
     }
 }

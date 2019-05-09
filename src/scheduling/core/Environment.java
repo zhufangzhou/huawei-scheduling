@@ -30,6 +30,10 @@ public class Environment {
     private Map<Pair<Plant, Plant>, Integer> transitCostMap;
     private Map<Pair<Plant, Plant>, Integer> transitLeadTimeMap;
 
+    private int startDate; // the start date of the scheduling
+    private int endDate; // the end date of the scheduling
+    private int period; // the period (number of days) of the scheduling
+
     public Environment(Map<String, ProductCategory> productCategoryMap, Map<String, Plant> plantMap, Map<Pair<Plant, Plant>, Integer> transitCostMap, Map<Pair<Plant, Plant>, Integer> transitLeadTimeMap, Map<String, MachineSet> machineSetMap, Map<String, Item> itemMap) {
         this.productCategoryMap = productCategoryMap;
         this.plantMap = plantMap;
@@ -87,13 +91,36 @@ public class Environment {
         this.itemMap = itemMap;
     }
 
+    public int getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(int startDate) {
+        this.startDate = startDate;
+    }
+
+    public int getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(int endDate) {
+        this.endDate = endDate;
+    }
+
+    public int getPeriod() {
+        return period;
+    }
+
+    public void setPeriod(int period) {
+        this.period = period;
+    }
+
     /**
      * Read the environment from a .xlsx file.
      * @param file the .xlsx file.
-     * @param startDate the start date.
      * @return the environment.
      */
-    public static Environment readFromFile(File file, int startDate) {
+    public static Environment readFromFile(File file) {
         Environment environment = null;
 
         try {
@@ -116,6 +143,18 @@ public class Environment {
                 TimePeriod timePeriod = new TimePeriod(date, week, length);
                 timePeriodMap.put(date, timePeriod);
             }
+
+            // get the start and end dates
+            int startDate = Integer.MAX_VALUE;
+            int endDate = Integer.MIN_VALUE;
+            for (int date : timePeriodMap.keySet()) {
+                if (date < startDate)
+                    startDate = date;
+
+                if (date > endDate)
+                    endDate = date;
+            }
+            int period = TimePeriod.gap(startDate, endDate) + 1;
 
             // Read the product catogories
             Map<String, ProductCategory> productCategoryMap = new HashMap<>();
@@ -369,6 +408,9 @@ public class Environment {
 
             environment =
                     new Environment(productCategoryMap, plantMap, transitCostMap, transitLeadTimeMap, machineSetMap, itemMap);
+            environment.setStartDate(startDate);
+            environment.setEndDate(endDate);
+            environment.setPeriod(period);
 
             // Closing the workbook
             wb.close();
@@ -381,7 +423,8 @@ public class Environment {
 
     public static void main(String[] args) {
         File file = new File("data/e_vuw_test_multi_plant_01.xlsx");
-        Environment environment = Environment.readFromFile(file, 20161203);
+
+        Environment environment = Environment.readFromFile(file);
 
         System.out.println("finished");
     }
