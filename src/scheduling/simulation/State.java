@@ -5,9 +5,13 @@ import scheduling.core.Environment;
 import scheduling.core.Schedule;
 import scheduling.core.input.Item;
 import scheduling.core.input.Plant;
+import scheduling.scheduler.GreedyStaticScheduler;
+import scheduling.scheduler.Scheduler;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -19,38 +23,36 @@ import java.util.Map;
 public class State {
     private Environment env; // the environment
 
-    private int startDate; // the starting date, used to calculate the day id
     private int dateIndex; // the current date index
+
+    private Map<Integer, List<Item>> orderDemMap; // the daily ordered demands (items)
+    private Map<Integer, List<Item>> forecastDemMap; // the daily forecast demands (items)
 
     private Schedule plannedSchedule; // the planned schedule that is not executed yet.
     private Schedule executedSchedule; // the executed schedule so far (during the simulation)
 
-    public State(Environment env, int startDate, Schedule plannedSchedule, Schedule executedSchedule) {
+    public State(Environment env, Schedule plannedSchedule, Schedule executedSchedule) {
         this.env = env;
-        this.startDate = startDate;
         this.dateIndex = 0;
         this.plannedSchedule = plannedSchedule;
         this.executedSchedule = executedSchedule;
+
+        initDemMaps();
     }
 
     /**
-     * Read the state from a file and the start date.
+     * Read a static problem from a file and the start date.
      * @param file the file.
-     * @param startDate the start date.
      * @return the state.
      */
-    public static State readFromFile(File file, int startDate) {
-        Environment env = Environment.readFromFile(file, startDate);
+    public static State staticProbFromFile(File file) {
+        Environment env = Environment.readFromFile(file);
 
-        return new State(env, startDate, new Schedule(), new Schedule());
+        return new State(env, new Schedule(), new Schedule());
     }
 
     public Environment getEnv() {
         return env;
-    }
-
-    public int getStartDate() {
-        return startDate;
     }
 
     public int getDateIndex() {
@@ -69,10 +71,6 @@ public class State {
         this.env = env;
     }
 
-    public void setStartDate(int startDate) {
-        this.startDate = startDate;
-    }
-
     public void setDateIndex(int dateIndex) {
         this.dateIndex = dateIndex;
     }
@@ -83,5 +81,59 @@ public class State {
 
     public void setExecutedSchedule(Schedule executedSchedule) {
         this.executedSchedule = executedSchedule;
+    }
+
+    public Map<Integer, List<Item>> getOrderDemMap() {
+        return orderDemMap;
+    }
+
+    public void setOrderDemMap(Map<Integer, List<Item>> orderDemMap) {
+        this.orderDemMap = orderDemMap;
+    }
+
+    public Map<Integer, List<Item>> getForecastDemMap() {
+        return forecastDemMap;
+    }
+
+    public void setForecastDemMap(Map<Integer, List<Item>> forecastDemMap) {
+        this.forecastDemMap = forecastDemMap;
+    }
+
+    public void initDemMaps() {
+        orderDemMap = new HashMap<>();
+        forecastDemMap = new HashMap<>();
+
+        for (Item item : env.getItemMap().values()) {
+            for (int dateId : item.getOrderDemandMap().keySet()) {
+                List<Item> dailyDem = orderDemMap.get(dateId);
+                if (dailyDem == null) {
+                    dailyDem = new ArrayList<>();
+                    orderDemMap.put(dateId, dailyDem);
+                }
+
+                dailyDem.add(item);
+            }
+
+            for (int dateId : item.getForecastDemandMap().keySet()) {
+                List<Item> dailyDem = forecastDemMap.get(dateId);
+                if (dailyDem == null) {
+                    dailyDem = new ArrayList<>();
+                    forecastDemMap.put(dateId, dailyDem);
+                }
+
+                dailyDem.add(item);
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        File file = new File("data/e_vuw_test_multi_plant_01.xlsx");
+
+        State staticProb = State.staticProbFromFile(file);
+
+        Scheduler scheduler = new GreedyStaticScheduler();
+        scheduler.makeSchedule(staticProb);
+
+        System.out.println("finished");
     }
 }

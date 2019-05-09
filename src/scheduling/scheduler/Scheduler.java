@@ -13,4 +13,5 @@ public abstract class Scheduler {
     }
 
     public abstract Schedule makeSchedule(State state);
+
 }
