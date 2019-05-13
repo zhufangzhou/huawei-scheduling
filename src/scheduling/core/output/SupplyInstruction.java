@@ -1,37 +1,37 @@
 package scheduling.core.output;
 
+import org.apache.commons.math3.util.Pair;
 import scheduling.core.input.Item;
 import scheduling.core.input.Plant;
 
 public class SupplyInstruction extends Instruction {
-    private Plant plant;
-    private int quantity;
+    private Pair<Item, Plant> supply;
+    private long quantity;
 
-    public SupplyInstruction(int startDate, int endDate, Item item, Plant plant, int quantity) {
+    public SupplyInstruction(int startDate, int endDate, Item item, Pair<Item, Plant> supply, long quantity) {
         super(startDate, endDate, item);
-        this.plant = plant;
+        this.supply = supply;
         this.quantity = quantity;
     }
 
-    public Plant getPlant() {
-        return plant;
+    public Pair<Item, Plant> getSupply() {
+        return supply;
     }
 
-    public int getQuantity() {
+    public void setSupply(Pair<Item, Plant> supply) {
+        this.supply = supply;
+    }
+
+    public long getQuantity() {
         return quantity;
     }
 
-    public void addQuantity(int quantity) {
-        this.quantity += quantity;
-    }
-
-    public void removeQuantity(int quantity) {
-        this.quantity -= quantity;
+    public void setQuantity(long quantity) {
+        this.quantity = quantity;
     }
 
     @Override
     public String toString() {
-        return "SUPP[" + getItem().toString() + ", " + plant.toString() +
-                ", " + quantity + "]";
+        return "[" + supply.toString() + ": " + quantity + "]";
     }
 }

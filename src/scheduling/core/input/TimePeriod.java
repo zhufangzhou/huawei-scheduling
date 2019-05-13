@@ -4,7 +4,7 @@ import java.sql.Time;
 
 public class TimePeriod {
     private int date;
-    private int week;
+    private int week; // the first day of the week of this date
     private int length;
     private int endDate;
 
@@ -95,7 +95,7 @@ public class TimePeriod {
         }
 
         while (currMonth < month2) {
-            gap += getDaysInMonth(currYear, currMonth);
+            gap += getDaysInMonth(currYear, currMonth)-currDay;
             currMonth ++;
             currDay = 0;
         }

@@ -15,7 +15,7 @@ public class Item extends Candidate implements Comparable<Item> {
     private double materialCost;
     private ProductCategory productCategory;
     private double holdingCost;
-    private List<Pair<Plant, Plant>> transits;
+    private Map<Pair<Plant, Plant>, Transit> transitMap;
     private CapacityType capacityType;
     private double rate;
     private Map<Plant, Production> productionMap;
@@ -26,6 +26,9 @@ public class Item extends Candidate implements Comparable<Item> {
     private Map<Plant, Long> initInventoryMap;
     private Map<Plant, Map<Integer, Long>> frozenProductionMap;
 
+    private int minProductionLeadTime;
+    private Set<Plant> plants; // the plants that can hold the item
+
     public Item(String id, ItemType type, double materialCost, ProductCategory productCategory, double holdingCost) {
         this.id = id;
         this.type = type;
@@ -33,7 +36,7 @@ public class Item extends Candidate implements Comparable<Item> {
         this.productCategory = productCategory;
         this.holdingCost = holdingCost;
 
-        transits = new ArrayList<>();
+        transitMap = new HashMap<>();
         productionMap = new HashMap<>();
         proportionConstraints = new LinkedList<>();
         machineMap = new HashMap<>();
@@ -64,8 +67,8 @@ public class Item extends Candidate implements Comparable<Item> {
         return holdingCost;
     }
 
-    public List<Pair<Plant, Plant>> getTransits() {
-        return transits;
+    public Map<Pair<Plant, Plant>, Transit> getTransitMap() {
+        return transitMap;
     }
 
     public CapacityType getCapacityType() {
@@ -120,12 +123,59 @@ public class Item extends Candidate implements Comparable<Item> {
         return productionMap.get(plant);
     }
 
+    public int getMinProductionLeadTime() {
+        return minProductionLeadTime;
+    }
+
+    public void setMinProductionLeadTime(int minProductionLeadTime) {
+        this.minProductionLeadTime = minProductionLeadTime;
+    }
+
+    public Set<Plant> getPlants() {
+        return plants;
+    }
+
+    public void setPlants(Set<Plant> plants) {
+        this.plants = plants;
+    }
+
     public void addProportionConstraint(ProportionConstraint proportionConstraint) {
         proportionConstraints.add(proportionConstraint);
     }
 
-    public void addTransit(Plant fromPlant, Plant toPlant) {
-        transits.add(new Pair<>(fromPlant, toPlant));
+    public void addTransit(Transit transit) {
+        Plant fromPlant = transit.getFromPlant();
+        Plant toPlant = transit.getToPlant();
+        transitMap.put(new Pair<>(fromPlant, toPlant), transit);
+    }
+
+    public void calcMinProdLeadTime() {
+        minProductionLeadTime = Integer.MAX_VALUE;
+        for (Production production : productionMap.values()) {
+            int leadTime = production.getLeadTime();
+            if (minProductionLeadTime > leadTime)
+                minProductionLeadTime = leadTime;
+        }
+    }
+
+    /**
+     * Calculate the plants that can hold the item
+     */
+    public void calcPlants() {
+        plants = new HashSet<>();
+
+        // where it is initially
+        plants.addAll(initInventoryMap.keySet());
+
+        // where it can be produced
+        plants.addAll(productionMap.keySet());
+        plants.addAll(frozenProductionMap.keySet());
+
+        // where it can be transit from/to
+        for (Transit transit : transitMap.values()) {
+            plants.add(transit.getFromPlant());
+            plants.add(transit.getToPlant());
+        }
     }
 
     @Override

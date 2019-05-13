@@ -5,37 +5,43 @@ import scheduling.core.input.Production;
 
 public class ProductionInstruction extends Instruction {
     private Production production;
-    private int lots;
+    private long lots;
+    private long quantity;
 
-    public ProductionInstruction(int startDate, int endDate, Item item, Production production, int lots) {
+    public ProductionInstruction(int startDate, int endDate, Item item, Production production, long lots) {
         super(startDate, endDate, item);
         this.production = production;
         this.lots = lots;
+        this.quantity = lots * production.getLotSize();
     }
 
     public Production getProduction() {
         return production;
     }
 
-    public int getLots() {
+    public void setProduction(Production production) {
+        this.production = production;
+    }
+
+    public long getLots() {
         return lots;
     }
 
-    public void addLots(int addedLots) {
-        this.lots += addedLots;
-    }
-
-    public void removeLots(int removedLots) {
-        this.lots -= removedLots;
+    public void setLots(long lots) {
+        this.lots = lots;
+        this.quantity = lots * production.getLotSize();
     }
 
     public long getQuantity() {
-        return lots * production.getLotSize();
+        return quantity;
+    }
+
+    public void setQuantity(long quantity) {
+        this.quantity = quantity;
     }
 
     @Override
     public String toString() {
-        return "PROD[" + production.getItem().toString() + ", " +
-                production.getPlant().toString() + ", " + lots + "]";
+        return "[" + production.toString() + ": " + lots + "]";
     }
 }

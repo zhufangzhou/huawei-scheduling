@@ -85,6 +85,9 @@ public class Production {
 
     @Override
     public String toString() {
-        return "[" + item.toString() + ", " + plant.toString() + "]";
+        return "Production{" +
+                "" + item.toString() +
+                ", " + plant.toString() +
+                '}';
     }
 }
