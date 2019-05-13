@@ -9,7 +9,9 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import scheduling.core.input.*;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -19,7 +21,7 @@ import java.util.Map;
  * - all the items and their basic properties during the process
  * - all the plants and their basic properties during the process
  * - all the machines sets and their basic properties during the process
- * - transits between the plants
+ * - all the transits of items between plants and the cost and lead time
  */
 
 public class Environment {
@@ -27,68 +29,61 @@ public class Environment {
     private Map<String, Item> itemMap;
     private Map<String, Plant> plantMap;
     private Map<String, MachineSet> machineSetMap;
-    private Map<Pair<Plant, Plant>, Integer> transitCostMap;
-    private Map<Pair<Plant, Plant>, Integer> transitLeadTimeMap;
+    private List<Transit> transits;
+//    private Map<Pair<Plant, Plant>, Integer> transitCostMap;
+//    private Map<Pair<Plant, Plant>, Integer> transitLeadTimeMap;
 
     private int startDate; // the start date of the scheduling
     private int endDate; // the end date of the scheduling
     private int period; // the period (number of days) of the scheduling
+    private Map<Integer, Integer> remainingWeekDaysMap;
 
-    public Environment(Map<String, ProductCategory> productCategoryMap, Map<String, Plant> plantMap, Map<Pair<Plant, Plant>, Integer> transitCostMap, Map<Pair<Plant, Plant>, Integer> transitLeadTimeMap, Map<String, MachineSet> machineSetMap, Map<String, Item> itemMap) {
+    public Environment(Map<String, ProductCategory> productCategoryMap, Map<String, Item> itemMap, Map<String, Plant> plantMap, Map<String, MachineSet> machineSetMap, List<Transit> transits) {
         this.productCategoryMap = productCategoryMap;
-        this.plantMap = plantMap;
-        this.transitCostMap = transitCostMap;
-        this.transitLeadTimeMap = transitLeadTimeMap;
-        this.machineSetMap = machineSetMap;
         this.itemMap = itemMap;
+        this.plantMap = plantMap;
+        this.machineSetMap = machineSetMap;
+        this.transits = transits;
     }
 
     public Map<String, ProductCategory> getProductCategoryMap() {
         return productCategoryMap;
     }
 
-    public Map<String, Plant> getPlantMap() {
-        return plantMap;
-    }
-
-    public Map<Pair<Plant, Plant>, Integer> getTransitCostMap() {
-        return transitCostMap;
-    }
-
-    public Map<Pair<Plant, Plant>, Integer> getTransitLeadTimeMap() {
-        return transitLeadTimeMap;
-    }
-
-    public Map<String, MachineSet> getMachineSetMap() {
-        return machineSetMap;
+    public void setProductCategoryMap(Map<String, ProductCategory> productCategoryMap) {
+        this.productCategoryMap = productCategoryMap;
     }
 
     public Map<String, Item> getItemMap() {
         return itemMap;
     }
 
-    public void setProductCategoryMap(Map<String, ProductCategory> productCategoryMap) {
-        this.productCategoryMap = productCategoryMap;
+    public void setItemMap(Map<String, Item> itemMap) {
+        this.itemMap = itemMap;
+    }
+
+    public Map<String, Plant> getPlantMap() {
+        return plantMap;
     }
 
     public void setPlantMap(Map<String, Plant> plantMap) {
         this.plantMap = plantMap;
     }
 
-    public void setTransitCostMap(Map<Pair<Plant, Plant>, Integer> transitCostMap) {
-        this.transitCostMap = transitCostMap;
-    }
-
-    public void setTransitLeadTimeMap(Map<Pair<Plant, Plant>, Integer> transitLeadTimeMap) {
-        this.transitLeadTimeMap = transitLeadTimeMap;
+    public Map<String, MachineSet> getMachineSetMap() {
+        return machineSetMap;
     }
 
     public void setMachineSetMap(Map<String, MachineSet> machineSetMap) {
         this.machineSetMap = machineSetMap;
     }
 
-    public void setItemMap(Map<String, Item> itemMap) {
-        this.itemMap = itemMap;
+    public List<Transit> getTransits() {
+        return transits;
+    }
+
+    public void setTransits(List<Transit> transits) {
+        this.transits = transits;
     }
 
     public int getStartDate() {
@@ -113,6 +108,14 @@ public class Environment {
 
     public void setPeriod(int period) {
         this.period = period;
+    }
+
+    public Map<Integer, Integer> getRemainingWeekDaysMap() {
+        return remainingWeekDaysMap;
+    }
+
+    public void setRemainingWeekDaysMap(Map<Integer, Integer> remainingWeekDaysMap) {
+        this.remainingWeekDaysMap = remainingWeekDaysMap;
     }
 
     /**
@@ -154,7 +157,18 @@ public class Environment {
                 if (date > endDate)
                     endDate = date;
             }
-            int period = TimePeriod.gap(startDate, endDate) + 1;
+            int period = TimePeriod.gap(startDate, endDate)+1;
+
+            Map<Integer, Integer> remainingWeekDaysMap = new HashMap<>();
+            int weekStarts = timePeriodMap.get(startDate).getWeek();
+            int remainingWeekDays = 6-TimePeriod.gap(weekStarts, startDate);
+            for (int d = 0; d < period; d++) {
+                remainingWeekDaysMap.put(d, remainingWeekDays);
+
+                remainingWeekDays --;
+                if (remainingWeekDays < 0)
+                    remainingWeekDays = 6;
+            }
 
             // Read the product catogories
             Map<String, ProductCategory> productCategoryMap = new HashMap<>();
@@ -178,7 +192,7 @@ public class Environment {
                 row = sheet.getRow(i);
 
                 String name = df.formatCellValue(row.getCell(0));
-                int lod = Integer.valueOf(df.formatCellValue(row.getCell(1)));
+                int lod = Integer.valueOf(df.formatCellValue(row.getCell(1))); // locked out days
                 String type = df.formatCellValue(row.getCell(1));
 
                 Plant plant = new Plant(name, lod, type);
@@ -195,7 +209,7 @@ public class Environment {
                 String name = df.formatCellValue(row.getCell(0));
                 Plant plant = plantMap.get(df.formatCellValue(row.getCell(1)));
                 CapacityType ct = CapacityType.get(df.formatCellValue(row.getCell(2)));
-                double sf = ExcelProcessor.readDoubleCell(row.getCell(3));
+                double sf = ExcelProcessor.readDoubleCell(row.getCell(3)); // smoothing factor
 
                 MachineSet machineSet = new MachineSet(name, plant, ct, sf);
 
@@ -212,8 +226,8 @@ public class Environment {
 
                 String id = df.formatCellValue(row.getCell(0));
                 ItemType type = ItemType.get(df.formatCellValue(row.getCell(1)));
-                double mcost = Double.valueOf(df.formatCellValue(row.getCell(2)));
-                ProductCategory pc = productCategoryMap.get(df.formatCellValue(row.getCell(5)));
+                double mcost = Double.valueOf(df.formatCellValue(row.getCell(2))); // material cost
+                ProductCategory pc = productCategoryMap.get(df.formatCellValue(row.getCell(5))); // product category
                 double hcost = Double.valueOf(df.formatCellValue(row.getCell(6)));
 
                 Item item = new Item(id, type, mcost, pc, hcost);
@@ -228,8 +242,8 @@ public class Environment {
 
                 Item item = itemMap.get(df.formatCellValue(row.getCell(0)));
                 int date = Integer.valueOf(df.formatCellValue(row.getCell(1)));
-                long odem = Long.valueOf(df.formatCellValue(row.getCell(2)));
-                long fdem = Long.valueOf(df.formatCellValue(row.getCell(3)));
+                long odem = Long.valueOf(df.formatCellValue(row.getCell(2))); // order demand
+                long fdem = Long.valueOf(df.formatCellValue(row.getCell(3))); // forecast demand
 
                 TimePeriod timePeriod = timePeriodMap.get(date);
                 int dueDate = timePeriod.dueDate();
@@ -243,9 +257,10 @@ public class Environment {
             }
 
             // Read the transit information and merge into plants and item
-            Map<Pair<Plant, Plant>, Integer> transitCostMap = new HashMap<>();
-            Map<Pair<Plant, Plant>, Integer> transitLeadTimeMap = new HashMap<>();
+//            Map<Pair<Plant, Plant>, Integer> transitCostMap = new HashMap<>();
+//            Map<Pair<Plant, Plant>, Integer> transitLeadTimeMap = new HashMap<>();
 
+            List<Transit> transits = new ArrayList<>();
             sheet = wb.getSheetAt(ExcelProcessor.TRANSIT_IDX);
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
@@ -256,16 +271,19 @@ public class Environment {
                 int cost = Integer.valueOf(df.formatCellValue(row.getCell(3)));
                 int leadTime = Integer.valueOf(df.formatCellValue(row.getCell(4)));
 
-                // transit maps
-                transitCostMap.put(new Pair(fromPlant, toPlant), cost);
-                transitLeadTimeMap.put(new Pair(fromPlant, toPlant), leadTime);
+                Transit transit = new Transit(item, fromPlant, toPlant, cost, leadTime);
+                transits.add(transit);
+
+//                // transit maps
+//                transitCostMap.put(new Pair(fromPlant, toPlant), cost);
+//                transitLeadTimeMap.put(new Pair(fromPlant, toPlant), leadTime);
 
                 // plant transit maps
                 fromPlant.putTransitOutMap(toPlant, item);
                 toPlant.putTransitInMap(fromPlant, item);
 
                 // item transits
-                item.addTransit(fromPlant, toPlant);
+                item.addTransit(transit);
             }
 
             // Read the capacity and merge into machine set
@@ -301,13 +319,13 @@ public class Environment {
                 Item item = itemMap.get(df.formatCellValue(row.getCell(0)));
                 Plant plant = plantMap.get(df.formatCellValue(row.getCell(1)));
                 double cost = Double.valueOf(df.formatCellValue(row.getCell(2)));
-                int leadTime = Integer.valueOf(df.formatCellValue(row.getCell(4)));
-                int preWeekProd = Integer.valueOf(df.formatCellValue(row.getCell(5)));
-                int wtdProd = Integer.valueOf(df.formatCellValue(row.getCell(6)));
-                int lotSize = Integer.valueOf(df.formatCellValue(row.getCell(7)));
-                int minProd = Integer.valueOf(df.formatCellValue(row.getCell(8)));
-                int maxProd = Integer.valueOf(df.formatCellValue(row.getCell(9)));
-                int fds = Integer.valueOf(df.formatCellValue(row.getCell(10)));
+                int leadTime = Integer.valueOf(df.formatCellValue(row.getCell(10))); // Integer.valueOf(df.formatCellValue(row.getCell(3)));
+                int preWeekProd = Integer.valueOf(df.formatCellValue(row.getCell(4)));
+                int wtdProd = Integer.valueOf(df.formatCellValue(row.getCell(5))); // week-to-date productions
+                int lotSize = 1; //[data error, all zeros] Integer.valueOf(df.formatCellValue(row.getCell(6)));
+                int minProd = Integer.valueOf(df.formatCellValue(row.getCell(7)));
+                int maxProd = Integer.valueOf(df.formatCellValue(row.getCell(8)));
+                int fds = Integer.valueOf(df.formatCellValue(row.getCell(9)));
 
                 Production production = new Production(item, plant, cost, leadTime,
                         preWeekProd, wtdProd, lotSize, minProd, maxProd, fds);
@@ -375,6 +393,9 @@ public class Environment {
 
                 Item item = itemMap.get(df.formatCellValue(row.getCell(0)));
                 Plant plant = plantMap.get(df.formatCellValue(row.getCell(1)));
+                if (plant == null) {
+                    System.out.println("Unknown plant: " + df.formatCellValue(row.getCell(1)));
+                }
                 int date = Integer.valueOf(df.formatCellValue(row.getCell(2)));
                 TimePeriod timePeriod = timePeriodMap.get(date);
                 long quantity = Long.valueOf(df.formatCellValue(row.getCell(3)));
@@ -397,6 +418,9 @@ public class Environment {
                 row = sheet.getRow(i);
 
                 Item item = itemMap.get(df.formatCellValue(row.getCell(0)));
+                if (item == null) {
+                    System.out.println("Unknown item:" + df.formatCellValue(row.getCell(0)));
+                }
                 long quantity = Integer.valueOf(df.formatCellValue(row.getCell(1)));
                 int date = Integer.valueOf(df.formatCellValue(row.getCell(2)));
                 Plant plant = plantMap.get(df.formatCellValue(row.getCell(3)));
@@ -407,10 +431,29 @@ public class Environment {
             }
 
             environment =
-                    new Environment(productCategoryMap, plantMap, transitCostMap, transitLeadTimeMap, machineSetMap, itemMap);
+                    new Environment(productCategoryMap, itemMap, plantMap, machineSetMap, transits);
             environment.setStartDate(startDate);
             environment.setEndDate(endDate);
             environment.setPeriod(period);
+            environment.setRemainingWeekDaysMap(remainingWeekDaysMap);
+
+            // calculate the min production lead time for each item
+            for (Item item : itemMap.values()) {
+                item.calcMinProdLeadTime();
+            }
+
+            // calculate the plants that can hold each item
+            for (Item item : itemMap.values()) {
+                item.calcPlants();
+            }
+            // the plants purchasing the materials can also hold the items
+            for (Plant plant : plantMap.values()) {
+                for (Map<Item, Long> dailyMap : plant.getRawMaterialPoMap().values()) {
+                    for (Item item : dailyMap.keySet()) {
+                        item.getPlants().add(plant);
+                    }
+                }
+            }
 
             // Closing the workbook
             wb.close();

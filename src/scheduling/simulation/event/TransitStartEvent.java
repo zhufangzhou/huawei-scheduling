@@ -31,9 +31,9 @@ public class TransitStartEvent extends Event {
     @Override
     public void trigger(State state) {
         Item item = instruction.getItem();
-        Plant fromPlant = instruction.getFromPlant();
-        Plant toPlant = instruction.getToPlant();
-        int quantity = instruction.getQuantity();
+        Plant fromPlant = instruction.getTransit().getFromPlant();
+        Plant toPlant = instruction.getTransit().getToPlant();
+        long quantity = instruction.getQuantity();
 
 //        state.reduceInventory(item, fromPlant, quantity);
 //

@@ -2,43 +2,36 @@ package scheduling.core.output;
 
 import scheduling.core.input.Item;
 import scheduling.core.input.Plant;
+import scheduling.core.input.Transit;
 
 public class TransitInstruction extends Instruction {
-    private int quantity;
-    private Plant fromPlant;
-    private Plant toPlant;
+    private Transit transit;
+    private long quantity;
 
-    public TransitInstruction(int startDate, int endDate, Item item, int quantity, Plant fromPlant, Plant toPlant) {
+    public TransitInstruction(int startDate, int endDate, Item item, Transit transit, long quantity) {
         super(startDate, endDate, item);
+        this.transit = transit;
         this.quantity = quantity;
-        this.fromPlant = fromPlant;
-        this.toPlant = toPlant;
     }
 
-    public int getQuantity() {
+    public Transit getTransit() {
+        return transit;
+    }
+
+    public void setTransit(Transit transit) {
+        this.transit = transit;
+    }
+
+    public long getQuantity() {
         return quantity;
     }
 
-    public Plant getFromPlant() {
-        return fromPlant;
-    }
-
-    public Plant getToPlant() {
-        return toPlant;
-    }
-
-    public void addQuantity(int quantity) {
-        this.quantity += quantity;
-    }
-
-    public void removeQuantity(int quantity) {
-        this.quantity -= quantity;
+    public void setQuantity(long quantity) {
+        this.quantity = quantity;
     }
 
     @Override
     public String toString() {
-        return "TRAN[" + getItem().toString() + ", " +
-                fromPlant.toString() + " -> " + toPlant.toString() + ", " +
-                quantity + "]";
+        return "[" + transit.toString() + ": " + quantity + "]";
     }
 }
