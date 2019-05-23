@@ -12,7 +12,7 @@ public class MachineSet implements Comparable<MachineSet> {
     private Plant plant;
     private CapacityType capacityType;
     private double smoothingFactor;
-    private Map<Integer, Double> capacityMap;
+    private Map<Integer, Capacity> capacityMap;
 
     public MachineSet(String name, Plant plant, CapacityType capacityType, double smoothingFactor) {
         this.name = name;
@@ -39,15 +39,11 @@ public class MachineSet implements Comparable<MachineSet> {
         return smoothingFactor;
     }
 
-    public Map<Integer, Double> getCapacityMap() {
+    public Map<Integer, Capacity> getCapacityMap() {
         return capacityMap;
     }
 
-    public void putCapacity(Integer date, double cap) {
-        capacityMap.put(date, cap);
-    }
-
-    public void setCapacityMap(Map<Integer, Double> capacityMap) {
+    public void setCapacityMap(Map<Integer, Capacity> capacityMap) {
         this.capacityMap = capacityMap;
     }
 

@@ -175,6 +175,7 @@ public class Schedule {
         this.startDateId = state.getDateIndex();
         this.endDateId = state.getEnv().getPeriod();
 
+        // initialise all the schedules to be empty
         for (int d = startDateId; d < endDateId; d++) {
             productionSchedule.put(d, new HashMap<>());
             transitSchedule.put(d, new HashMap<>());
@@ -185,9 +186,11 @@ public class Schedule {
         for (int dateId = startDateId; dateId < endDateId; dateId++) {
             Map<Item, Map<Plant, Inventory>> dailyInventoryMap = new HashMap<>();
             for (Item item : state.getEnv().getItemMap().values()) {
+                // for each item
                 Map<Plant, Inventory> map = new HashMap<>();
 
                 for (Plant plant : item.getPlants()) {
+                    // for each plant that can hold this item
                     map.put(plant, new Inventory(0l, 0l));
                 }
 
@@ -219,7 +222,7 @@ public class Schedule {
         }
 
         /**
-         * not working now - some frozen productions are at unknown plants
+         * TODO add work-in-process, not frozen production
          */
 //        // add inventory by the frozen productions
 //        for (Item item : state.getEnv().getItemMap().values()) {
@@ -236,12 +239,13 @@ public class Schedule {
 //            }
 //        }
 
-        // for the ordered demands, the supply may be any date afterwards
+        // initialise the order supplies
         for (int dateId = startDateId; dateId < endDateId; dateId++) {
             Map<Item, Long> dailyOrderSupply = new HashMap<>();
             orderSupplyMap.put(dateId, dailyOrderSupply);
         }
 
+        // for the ordered demands, the supply may be any date afterwards
         for (int dateId = startDateId; dateId < endDateId; dateId++) {
             List<Item> dailyOrderDem = state.getOrderDemMap().get(dateId);
 
@@ -381,7 +385,7 @@ public class Schedule {
         Item item = supply.getFirst();
         Plant plant = supply.getSecond();
 
-        // add the supply instruction
+        // add the instruction
         Map<Pair<Item, Plant>, SupplyInstruction> dailySupplySchedule = supplySchedule.get(dateId);
         if (dailySupplySchedule.containsKey(supply)) {
             SupplyInstruction instruction = dailySupplySchedule.get(supply);
@@ -468,7 +472,7 @@ public class Schedule {
         Item item = supply.getFirst();
         Plant plant = supply.getSecond();
 
-        // add the supply instruction
+        // add the instruction
         Map<Pair<Item, Plant>, SupplyInstruction> dailySupplySchedule = supplySchedule.get(dateId);
         if (dailySupplySchedule.containsKey(supply)) {
             SupplyInstruction instruction = dailySupplySchedule.get(supply);
@@ -598,5 +602,87 @@ public class Schedule {
             if (remaining == 0)
                 break;
         }
+    }
+
+    /**
+     * Calculate the maximal production quantity of a production in a date id.
+     * The maximal quantity depends on
+     *   (1) the remaining capacity of the machine;
+     *   (2) the inventory of the boms;
+     *   (3) the maximal production.
+     * @param production the production.
+     * @param dateId the date id.
+     * @return the maximal production quantity.
+     */
+    public long maxProductionQuantity(Production production, int dateId) {
+        Item item = production.getItem();
+        Plant plant = production.getPlant();
+        List<Bom> assembly = production.getAssembly();
+        // get the remaining capacity of the machine for this production
+        double remaCapa = item.getMachineMap().get(plant).getCapacityMap().get(dateId).getRemaining();
+        long maxQuantity1 = (long)(remaCapa / item.getRate());
+
+        // check the inventory of the boms at the plant
+        List<Long> bomInventories = new ArrayList<>();
+        for (Bom bom : assembly) {
+            long bomInve = inventoryMap.get(dateId).get(bom.getComponent()).get(plant).getFree();
+            bomInventories.add(bomInve);
+        }
+
+        long maxQuantity2 = Long.MAX_VALUE;
+        for (int i = 0; i < assembly.size(); i++) {
+            long quantity = bomInventories.get(i) / assembly.get(i).getQuantity();
+
+            if (maxQuantity2 > quantity)
+                maxQuantity2 = quantity;
+        }
+
+        long maxQuantity = maxQuantity1;
+        if (maxQuantity > maxQuantity2)
+            maxQuantity = maxQuantity2;
+
+        if (maxQuantity > production.getMaxProduction())
+            maxQuantity = production.getMaxProduction();
+
+        return maxQuantity;
+    }
+
+    public void addProduction(int dateId, Production production, long lots) {
+        int prodStartDate = dateId;
+        int prodEndDate = prodStartDate+production.getLeadTime();
+        Item item = production.getItem();
+        Plant plant = production.getPlant();
+        long prodQuantity = production.getLotSize() * lots;
+
+        // add the instruction
+        Map<Production, ProductionInstruction> dailyProdSchedule = productionSchedule.get(dateId);
+        if (dailyProdSchedule.containsKey(production)) {
+            ProductionInstruction instruction = dailyProdSchedule.get(production);
+            long old = instruction.getLots();
+            instruction.setLots(old+lots);
+        } else {
+            ProductionInstruction instruction =
+                    new ProductionInstruction(prodStartDate, prodEndDate, item, production, lots);
+            dailyProdSchedule.put(production, instruction);
+        }
+
+        // remove the capacity of the machine in the production start date
+        MachineSet machineSet = item.getMachineMap().get(plant);
+        Capacity capacity = machineSet.getCapacityMap().get(prodStartDate);
+        double old = capacity.getRemaining();
+        capacity.setRemaining(old-item.getRate()*prodQuantity);
+
+        // remove the inventory of the boms when the production is finished
+        for (Bom bom : production.getAssembly()) {
+            Item component = bom.getComponent();
+            long quantity = prodQuantity * bom.getQuantity();
+            removeInventory(prodEndDate, component, plant, quantity);
+        }
+
+        // add the inventory of the produced item when the production is finished
+        addInventory(prodEndDate, item, plant, prodQuantity);
+
+        // add the production cost
+        productionCost += production.getCost() * lots;
     }
 }

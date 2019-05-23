@@ -1,11 +1,16 @@
 package scheduling.core.input;
 
+/**
+ * The capacity of a machine.
+ * It has the total capacity, and the remaining capacity (after allocating the productions).
+ */
+
 public class Capacity {
-    private double capacity;
+    private double total;
     private double remaining;
 
-    public Capacity(double capacity, double remaining) {
-        this.capacity = capacity;
+    public Capacity(double total, double remaining) {
+        this.total = total;
         this.remaining = remaining;
     }
 
@@ -13,12 +18,12 @@ public class Capacity {
         this(capacity, capacity);
     }
 
-    public double getCapacity() {
-        return capacity;
+    public double getTotal() {
+        return total;
     }
 
-    public void setCapacity(double capacity) {
-        this.capacity = capacity;
+    public void setTotal(double total) {
+        this.total = total;
     }
 
     public double getRemaining() {
