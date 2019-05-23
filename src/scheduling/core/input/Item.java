@@ -20,7 +20,7 @@ public class Item extends Candidate implements Comparable<Item> {
     private double rate;
     private Map<Plant, Production> productionMap;
     private List<ProportionConstraint> proportionConstraints;
-    private Map<Plant, MachineSet> machineMap;
+    private Map<Plant, MachineSet> machineMap; //TODO: list of machine set
     private Map<Integer, Long> orderDemandMap;
     private Map<Integer, Long> forecastDemandMap;
     private Map<Plant, Long> initInventoryMap;

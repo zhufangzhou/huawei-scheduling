@@ -15,9 +15,9 @@ import java.util.Map;
 
 public class CapacityUpdateEvent extends Event {
     private MachineSet machineSet;
-    private Map<Integer, Double> capacityMap;
+    private Map<Integer, Capacity> capacityMap;
 
-    public CapacityUpdateEvent(int dateId, MachineSet machineSet, Map<Integer, Double> capacityMap) {
+    public CapacityUpdateEvent(int dateId, MachineSet machineSet, Map<Integer, Capacity> capacityMap) {
         super(dateId);
         this.machineSet = machineSet;
         this.capacityMap = capacityMap;

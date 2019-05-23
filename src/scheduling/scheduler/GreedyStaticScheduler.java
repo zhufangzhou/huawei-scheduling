@@ -4,6 +4,7 @@ import org.apache.commons.math3.util.Pair;
 import scheduling.core.Schedule;
 import scheduling.core.input.Item;
 import scheduling.core.input.Plant;
+import scheduling.core.input.Production;
 import scheduling.simulation.State;
 
 import java.util.*;
@@ -18,12 +19,12 @@ public class GreedyStaticScheduler extends Scheduler {
         schedule.initWithState(state);
 
         /**
-         * Step 1: supply the demand as early as possible
+         * Step 1: supply the demand as early as possible.
          * this can (1) increase fill rate, and (2) reduce inventory cost
          */
-        // we calculate the min production lead time for each item
+        // we calculate the min production lead time for each item.
         // if an order demand comes earlier than some forecast demand
-        // by the min production time, then it will have higher priority.
+        // by the min production time, then it will be supplied earlier.
         // because the forecast demand will cause delay for only one day.
         for (int dateId = 0; dateId < state.getEnv().getPeriod(); dateId++) {
             Map<Item, Long> dailyAccOrderDem = schedule.getAccOrderDemMap().get(dateId);
@@ -62,8 +63,53 @@ public class GreedyStaticScheduler extends Scheduler {
 
         /**
          * Step 2: add productions.
-         *
          */
+        for (int dateId = 0; dateId < state.getEnv().getPeriod(); dateId++) {
+            // check the order demand first
+            Map<Item, Long> dailyAccOrderDem = schedule.getAccOrderDemMap().get(dateId);
+
+            for (Item item : dailyAccOrderDem.keySet()) {
+                long dem = dailyAccOrderDem.get(item);
+
+                if (dem == 0)
+                    continue;
+
+                for (Production prod : item.getProductionMap().values()) {
+                    int leadTime = prod.getLeadTime();
+
+                    if (leadTime > dateId) {
+                        // this production cannot supply the demand in this date
+                        continue;
+                    }
+
+                    Plant plant = prod.getPlant();
+                    int prodStartDate = dateId-leadTime;
+                    long maxProdQuantity = schedule.maxProductionQuantity(prod, prodStartDate);
+                    long maxProdLots = maxProdQuantity / prod.getLotSize();
+
+                    // the lots required to supply the demand
+                    long demLots = (long)(Math.ceil(1.0 * dem / prod.getLotSize()));
+
+                    // the production lots is the minimum between demLots and maxProdLots
+                    long prodLots = demLots;
+                    if (prodLots > maxProdLots)
+                        prodLots = maxProdLots;
+
+                    schedule.addProduction(prodStartDate, prod, prodLots);
+
+                    // supply the produced item
+                    long suppliedQuantity = prodLots * prod.getLotSize();
+                    if (suppliedQuantity > dem)
+                        suppliedQuantity = dem;
+
+                    schedule.addOrderSupply(dateId, new Pair<>(item, plant), suppliedQuantity);
+                    dem -= suppliedQuantity;
+
+                    if (dem == 0)
+                        break;
+                }
+            }
+        }
 
         return schedule;
     }

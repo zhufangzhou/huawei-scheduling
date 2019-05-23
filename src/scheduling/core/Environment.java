@@ -296,7 +296,7 @@ public class Environment {
                 double capacity = Double.valueOf(df.formatCellValue(row.getCell(4)));
 
                 int dateIndex = TimePeriod.gap(startDate, date);
-                set.putCapacity(dateIndex, capacity);
+                set.getCapacityMap().put(dateIndex, new Capacity(capacity));
             }
 
             // Read the initial inventories and merge into plants
@@ -324,7 +324,7 @@ public class Environment {
                 int wtdProd = Integer.valueOf(df.formatCellValue(row.getCell(5))); // week-to-date productions
                 int lotSize = 1; //[data error, all zeros] Integer.valueOf(df.formatCellValue(row.getCell(6)));
                 int minProd = Integer.valueOf(df.formatCellValue(row.getCell(7)));
-                int maxProd = Integer.valueOf(df.formatCellValue(row.getCell(8)));
+                int maxProd = Integer.MAX_VALUE; // Integer.valueOf(df.formatCellValue(row.getCell(8)));
                 int fds = Integer.valueOf(df.formatCellValue(row.getCell(9)));
 
                 Production production = new Production(item, plant, cost, leadTime,
