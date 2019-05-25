@@ -221,23 +221,20 @@ public class Schedule {
             }
         }
 
-        /**
-         * TODO add work-in-process, not frozen production
-         */
-//        // add inventory by the frozen productions
-//        for (Item item : state.getEnv().getItemMap().values()) {
-//            Map<Plant, Map<Integer, Long>> itemFPMap = item.getFrozenProductionMap();
-//
-//            for (Plant plant : itemFPMap.keySet()) {
-//                Map<Integer, Long> itemPlantFPMap = itemFPMap.get(plant);
-//
-//                for (int dateId : itemPlantFPMap.keySet()) {
-//                    long quantity = itemPlantFPMap.get(dateId);
-//
-//                    addInventory(dateId, item, plant, quantity);
-//                }
-//            }
-//        }
+        // add inventory by the work-in-process
+        for (Plant plant : state.getEnv().getPlantMap().values()) {
+            Map<Integer, Map<Item, Long>> plantWipMap = plant.getWorkInProcessMap();
+
+            for (int dateId : plantWipMap.keySet()) {
+                Map<Item, Long> dailyWipMap = plantWipMap.get(dateId);
+
+                for (Item item : dailyWipMap.keySet()) {
+                    long quantity = dailyWipMap.get(item);
+
+                    addInventory(dateId, item, plant, quantity);
+                }
+            }
+        }
 
         // initialise the order supplies
         for (int dateId = startDateId; dateId < endDateId; dateId++) {
@@ -349,6 +346,18 @@ public class Schedule {
             old.add(quantity);
         }
 
+        // set the free inventories of all previous days to the new free inventory
+        // if a previous day's inventory is smaller than the free, the stop there.
+        long free = inventoryMap.get(dateId).get(item).get(plant).getFree();
+        for (int d = dateId-1; d >= startDateId; d--) {
+            Inventory inventory = inventoryMap.get(d).get(item).get(plant);
+
+            if (inventory.getTotal() < free)
+                break;
+
+            inventory.setFree(free);
+        }
+
         // increase the inventory cost
         inventoryCost += item.getHoldingCost() * quantity * (endDateId-dateId);
     }
@@ -370,8 +379,20 @@ public class Schedule {
             old.remove(quantity);
         }
 
+        // set the free inventories of all previous days to the new free inventory
+        // if the original free inventory is larger, then it will set to the new free.
+        long free = inventoryMap.get(dateId).get(item).get(plant).getFree();
+        for (int d = dateId-1; d >= startDateId; d--) {
+            Inventory inventory = inventoryMap.get(d).get(item).get(plant);
+
+            if (inventory.getFree() < free)
+                break;
+
+            inventory.setFree(free);
+        }
+
         // decrease the inventory cost
-        inventoryCost -= item.getHoldingCost() * quantity * (endDateId-dateId);
+        inventoryCost -= item.getHoldingCost()*quantity*(endDateId-dateId);
     }
 
     /**
@@ -398,11 +419,6 @@ public class Schedule {
 
         // remove inventory
         removeInventory(dateId, item, plant, quantity);
-        // reduce the free inventory for the previous dates
-        for (int d = startDateId; d < dateId; d++) {
-            Inventory inventory = inventoryMap.get(d).get(item).get(plant);
-            inventory.removeFree(quantity);
-        }
 
         // update the order supply map
         Map<Item, Long> itemSupplyMap = orderSupplyMap.get(dateId);
@@ -410,10 +426,34 @@ public class Schedule {
         itemSupplyMap.put(item, old+quantity);
 
         // decrease the accumulated order demand and total delay from this day on
+        // if the future demand is supplied, then revert the supply
         for (int d = dateId; d < endDateId; d++) {
             Map<Item, Long> dailyAccOrderDem = accOrderDemMap.get(d);
             old = dailyAccOrderDem.get(item);
             dailyAccOrderDem.put(item, old-quantity);
+
+            if (old < quantity) {
+                long reverted = quantity-old;
+                // find the corresponding supply instruction
+                Map<Pair<Item, Plant>, SupplyInstruction> futureSupplySchedule = supplySchedule.get(d);
+                for (Pair<Item, Plant> pair : futureSupplySchedule.keySet()) {
+                    if (pair.getFirst().equals(item)) {
+                        // reduce the supply from this plant
+                        SupplyInstruction revertedInstruction = futureSupplySchedule.get(pair);
+                        long revertedFromPlant = revertedInstruction.getQuantity();
+
+                        if (revertedFromPlant > reverted)
+                            revertedFromPlant = reverted;
+
+                        removeOrderSupply(d, pair, revertedFromPlant);
+
+                        reverted -= revertedFromPlant;
+
+                        if (reverted == 0)
+                            break;
+                    }
+                }
+            }
         }
 
         totalDelay -= quantity * (endDateId-dateId);
@@ -440,11 +480,6 @@ public class Schedule {
 
         // add inventory
         addInventory(dateId, item, plant, quantity);
-        // increase the free inventory for the previous dates
-        for (int d = startDateId; d < dateId; d++) {
-            Inventory inventory = inventoryMap.get(d).get(item).get(plant);
-            inventory.addFree(quantity);
-        }
 
         // update order supply map
         Map<Item, Long> itemSupplyMap = orderSupplyMap.get(dateId);
@@ -485,11 +520,6 @@ public class Schedule {
 
         // remove inventory
         removeInventory(dateId, item, plant, quantity);
-        // reduce the free inventory for the previous dates
-        for (int d = startDateId; d < dateId; d++) {
-            Inventory inventory = inventoryMap.get(d).get(item).get(plant);
-            inventory.removeFree(quantity);
-        }
 
         // update the forecast supply map
         Map<Item, Long> itemSupplyMap = forecastSupplyMap.get(dateId);
@@ -521,11 +551,6 @@ public class Schedule {
 
         // add inventory
         addInventory(dateId, item, plant, quantity);
-        // increase the free inventory for the previous dates
-        for (int d = startDateId; d < dateId; d++) {
-            Inventory inventory = inventoryMap.get(d).get(item).get(plant);
-            inventory.addFree(quantity);
-        }
 
         // update the forecast supply map
         Map<Item, Long> itemSupplyMap = forecastSupplyMap.get(dateId);
@@ -562,6 +587,7 @@ public class Schedule {
                 supplied = remaining;
 
             Pair<Item, Plant> supply = new Pair<>(item, plant);
+
             addOrderSupply(dateId, supply, supplied);
 
             remaining -= supplied;
@@ -618,9 +644,8 @@ public class Schedule {
         Item item = production.getItem();
         Plant plant = production.getPlant();
         List<Bom> assembly = production.getAssembly();
-        // get the remaining capacity of the machine for this production
-        double remaCapa = item.getMachineMap().get(plant).getCapacityMap().get(dateId).getRemaining();
-        long maxQuantity1 = (long)(remaCapa / item.getRate());
+        // get the max quantity from the machine capacities for this production
+        long maxQuantity1 = item.maxQuantityFromCapacity(plant, dateId);
 
         // check the inventory of the boms at the plant
         List<Long> bomInventories = new ArrayList<>();
@@ -666,11 +691,8 @@ public class Schedule {
             dailyProdSchedule.put(production, instruction);
         }
 
-        // remove the capacity of the machine in the production start date
-        MachineSet machineSet = item.getMachineMap().get(plant);
-        Capacity capacity = machineSet.getCapacityMap().get(prodStartDate);
-        double old = capacity.getRemaining();
-        capacity.setRemaining(old-item.getRate()*prodQuantity);
+        // remove the capacity of the machines in the production start date
+        item.reduceCapacity(plant, prodStartDate, prodQuantity);
 
         // remove the inventory of the boms when the production is finished
         for (Bom bom : production.getAssembly()) {

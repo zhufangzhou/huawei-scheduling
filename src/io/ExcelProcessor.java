@@ -9,6 +9,7 @@ import java.io.*;
 public class ExcelProcessor {
 
     public static final int CAPACITY_IDX = 0;
+    public static final int CAPACITY_TYPE_IDX = 1;
     public static final int PLANT_BOM_IDX = 2;
     public static final int DEMAND_IDX = 3;
     public static final int FROZEN_PROD_IDX = 4;
