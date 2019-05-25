@@ -5,6 +5,7 @@ import scheduling.core.Schedule;
 import scheduling.core.input.Item;
 import scheduling.core.input.Plant;
 import scheduling.core.input.Production;
+import scheduling.core.output.SupplyInstruction;
 import scheduling.simulation.State;
 
 import java.util.*;
@@ -41,7 +42,7 @@ public class GreedyStaticScheduler extends Scheduler {
                 for (Item item : dailyForecastItems) {
                     // check and supply for the more important order demand
                     // which cannot be supplied by production in time
-                    int lookAheadDays = item.getMinProductionLeadTime() - 1;
+                    int lookAheadDays = item.getMinProductionLeadTime()-1;
 
                     // supply the order demand that are more prior to the forecast demand
                     for (int d = dateId + 1; d < dateId + lookAheadDays; d++) {
@@ -57,6 +58,14 @@ public class GreedyStaticScheduler extends Scheduler {
 
                     // supply the forecast demand
                     schedule.supplyForecastDemand(item, dateId);
+                }
+            }
+        }
+
+        for (int d = schedule.getStartDateId(); d < schedule.getEndDateId(); d++) {
+            for (SupplyInstruction supplyInstruction : schedule.getSupplySchedule().get(d).values()) {
+                if (supplyInstruction.getQuantity() <= 0) {
+                    System.out.println("debug");
                 }
             }
         }
@@ -87,6 +96,9 @@ public class GreedyStaticScheduler extends Scheduler {
                     long maxProdQuantity = schedule.maxProductionQuantity(prod, prodStartDate);
                     long maxProdLots = maxProdQuantity / prod.getLotSize();
 
+                    if (maxProdLots == 0)
+                        continue;
+
                     // the lots required to supply the demand
                     long demLots = (long)(Math.ceil(1.0 * dem / prod.getLotSize()));
 
@@ -103,6 +115,7 @@ public class GreedyStaticScheduler extends Scheduler {
                         suppliedQuantity = dem;
 
                     schedule.addOrderSupply(dateId, new Pair<>(item, plant), suppliedQuantity);
+
                     dem -= suppliedQuantity;
 
                     if (dem == 0)
@@ -110,6 +123,14 @@ public class GreedyStaticScheduler extends Scheduler {
                 }
             }
         }
+
+//        for (int d = schedule.getStartDateId(); d < schedule.getEndDateId(); d++) {
+//            for (SupplyInstruction supplyInstruction : schedule.getSupplySchedule().get(d).values()) {
+//                if (supplyInstruction.getQuantity() <= 0) {
+//                    System.out.println("debug");
+//                }
+//            }
+//        }
 
         return schedule;
     }

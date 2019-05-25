@@ -33,8 +33,7 @@ public class ProductionStartEvent extends Event {
         Production production = instruction.getProduction();
         Item item = production.getItem();
         Plant plant = production.getPlant();
-        MachineSet machineSet = item.getMachineMap().get(plant);
-        long quantity = instruction.getQuantity();
+        item.reduceCapacity(plant, dateId, instruction.getQuantity());
 
 //        int date = state.getDate();
 //

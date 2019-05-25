@@ -1,7 +1,6 @@
 package scheduling.core;
 
 import io.ExcelProcessor;
-import org.apache.commons.math3.util.Pair;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -26,6 +25,7 @@ import java.util.Map;
 
 public class Environment {
     private Map<String, ProductCategory> productCategoryMap;
+    private Map<String, CapacityType> capacityTypeMap;
     private Map<String, Item> itemMap;
     private Map<String, Plant> plantMap;
     private Map<String, MachineSet> machineSetMap;
@@ -38,8 +38,9 @@ public class Environment {
     private int period; // the period (number of days) of the scheduling
     private Map<Integer, Integer> remainingWeekDaysMap;
 
-    public Environment(Map<String, ProductCategory> productCategoryMap, Map<String, Item> itemMap, Map<String, Plant> plantMap, Map<String, MachineSet> machineSetMap, List<Transit> transits) {
+    public Environment(Map<String, ProductCategory> productCategoryMap, Map<String, CapacityType> capacityTypeMap, Map<String, Item> itemMap, Map<String, Plant> plantMap, Map<String, MachineSet> machineSetMap, List<Transit> transits) {
         this.productCategoryMap = productCategoryMap;
+        this.capacityTypeMap = capacityTypeMap;
         this.itemMap = itemMap;
         this.plantMap = plantMap;
         this.machineSetMap = machineSetMap;
@@ -52,6 +53,14 @@ public class Environment {
 
     public void setProductCategoryMap(Map<String, ProductCategory> productCategoryMap) {
         this.productCategoryMap = productCategoryMap;
+    }
+
+    public Map<String, CapacityType> getCapacityTypeMap() {
+        return capacityTypeMap;
+    }
+
+    public void setCapacityTypeMap(Map<String, CapacityType> capacityTypeMap) {
+        this.capacityTypeMap = capacityTypeMap;
     }
 
     public Map<String, Item> getItemMap() {
@@ -184,6 +193,20 @@ public class Environment {
                 productCategoryMap.put(name, pc);
             }
 
+            // Read the capacity types
+            Map<String, CapacityType> capacityTypeMap = new HashMap<>();
+
+            sheet = wb.getSheetAt(ExcelProcessor.CAPACITY_TYPE_IDX);
+            for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
+                row = sheet.getRow(i);
+
+                String name = df.formatCellValue(row.getCell(0));
+                double rate = Double.valueOf(df.formatCellValue(row.getCell(1)));
+
+                CapacityType ct = new CapacityType(name, rate);
+                capacityTypeMap.put(name, ct);
+            }
+
             // Read the plants
             Map<String, Plant> plantMap = new HashMap<>();
 
@@ -208,7 +231,7 @@ public class Environment {
 
                 String name = df.formatCellValue(row.getCell(0));
                 Plant plant = plantMap.get(df.formatCellValue(row.getCell(1)));
-                CapacityType ct = CapacityType.get(df.formatCellValue(row.getCell(2)));
+                CapacityType ct = capacityTypeMap.get(df.formatCellValue(row.getCell(2)));
                 double sf = ExcelProcessor.readDoubleCell(row.getCell(3)); // smoothing factor
 
                 MachineSet machineSet = new MachineSet(name, plant, ct, sf);
@@ -354,11 +377,20 @@ public class Environment {
                 row = sheet.getRow(i);
 
                 Item item = itemMap.get(df.formatCellValue(row.getCell(0)));
-                CapacityType capacityType = CapacityType.get(df.formatCellValue(row.getCell(1)));
+                CapacityType capacityType = capacityTypeMap.get(df.formatCellValue(row.getCell(1)));
                 double rate = Double.valueOf(df.formatCellValue(row.getCell(2)));
 
-                item.setCapacityType(capacityType);
-                item.setRate(rate);
+                item.getRateMap().put(capacityType, rate);
+            }
+
+            // Fill in the missing rates as the default values
+            for (Item item : itemMap.values()) {
+                for (CapacityType capacityType : capacityTypeMap.values()) {
+                    if (item.getRateMap().containsKey(capacityType))
+                        continue;
+
+                    item.getRateMap().put(capacityType, capacityType.getDefaultRate());
+                }
             }
 
             // Read the work in process and merge into plants
@@ -383,7 +415,14 @@ public class Environment {
                 MachineSet machineSet = machineSetMap.get(df.formatCellValue(row.getCell(0)));
                 Item item = itemMap.get(df.formatCellValue(row.getCell(1)));
 
-                item.getMachineMap().put(machineSet.getPlant(), machineSet);
+                Plant plant = machineSet.getPlant();
+                List<MachineSet> machineSets = item.getMachineMap().get(plant);
+
+                if (machineSets == null)
+                    machineSets = new ArrayList<>();
+
+                machineSets.add(machineSet);
+                item.getMachineMap().put(plant, machineSets);
             }
 
             // Read the frozen productions and merge into items
@@ -430,8 +469,22 @@ public class Environment {
                 plant.putRawMaterialPo(item, quantity, dateIndex);
             }
 
+            /**
+             * fix bugs in the data file:
+             * remove a production if its item does not have machine set in the plant.
+             */
+            for (Item item : itemMap.values()) {
+                Map<Plant, Production> productionMap = item.getProductionMap();
+
+                for (Production production : productionMap.values()) {
+                    if (production.getItem().getMachineMap().isEmpty()) {
+                        productionMap.remove(production.getPlant());
+                    }
+                }
+            }
+
             environment =
-                    new Environment(productCategoryMap, itemMap, plantMap, machineSetMap, transits);
+                    new Environment(productCategoryMap, capacityTypeMap, itemMap, plantMap, machineSetMap, transits);
             environment.setStartDate(startDate);
             environment.setEndDate(endDate);
             environment.setPeriod(period);

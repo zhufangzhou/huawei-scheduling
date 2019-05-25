@@ -33,4 +33,17 @@ public class Capacity {
     public void setRemaining(double remaining) {
         this.remaining = remaining;
     }
+
+    public void addRemaining(double value) {
+        remaining += value;
+    }
+
+    public void reduceRemaining(double value) {
+        remaining -= value;
+    }
+
+    @Override
+    public String toString() {
+        return "{" + total + ", " + remaining + "}";
+    }
 }

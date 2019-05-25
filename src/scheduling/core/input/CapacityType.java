@@ -1,32 +1,32 @@
 package scheduling.core.input;
 
-import java.util.HashMap;
-import java.util.Map;
+public class CapacityType {
+    private String name;
+    private double defaultRate;
 
-public enum CapacityType {
-    PCS("Pcs"),
-    POINT("Point");
-
-    private final String name;
-
-    CapacityType(String name) {
+    public CapacityType(String name, double defaultRate) {
         this.name = name;
+        this.defaultRate = defaultRate;
     }
 
     public String getName() {
         return name;
     }
 
-    // Reverse-lookup map
-    private static final Map<String, CapacityType> lookup = new HashMap<>();
-
-    static {
-        for (CapacityType a : CapacityType.values()) {
-            lookup.put(a.getName(), a);
-        }
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public static CapacityType get(String name) {
-        return lookup.get(name);
+    public double getDefaultRate() {
+        return defaultRate;
+    }
+
+    public void setDefaultRate(int defaultRate) {
+        this.defaultRate = defaultRate;
+    }
+
+    @Override
+    public String toString() {
+        return name;
     }
 }

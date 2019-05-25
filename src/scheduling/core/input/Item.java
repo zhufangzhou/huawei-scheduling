@@ -16,11 +16,10 @@ public class Item extends Candidate implements Comparable<Item> {
     private ProductCategory productCategory;
     private double holdingCost;
     private Map<Pair<Plant, Plant>, Transit> transitMap;
-    private CapacityType capacityType;
-    private double rate;
+    private Map<CapacityType, Double> rateMap;
     private Map<Plant, Production> productionMap;
     private List<ProportionConstraint> proportionConstraints;
-    private Map<Plant, MachineSet> machineMap; //TODO: list of machine set
+    private Map<Plant, List<MachineSet>> machineMap; // the machine sets in each plant occupied by producing this item
     private Map<Integer, Long> orderDemandMap;
     private Map<Integer, Long> forecastDemandMap;
     private Map<Plant, Long> initInventoryMap;
@@ -37,6 +36,7 @@ public class Item extends Candidate implements Comparable<Item> {
         this.holdingCost = holdingCost;
 
         transitMap = new HashMap<>();
+        rateMap = new HashMap<>();
         productionMap = new HashMap<>();
         proportionConstraints = new LinkedList<>();
         machineMap = new HashMap<>();
@@ -71,19 +71,19 @@ public class Item extends Candidate implements Comparable<Item> {
         return transitMap;
     }
 
-    public CapacityType getCapacityType() {
-        return capacityType;
+    public Map<CapacityType, Double> getRateMap() {
+        return rateMap;
     }
 
-    public double getRate() {
-        return rate;
+    public void setRateMap(Map<CapacityType, Double> rateMap) {
+        this.rateMap = rateMap;
     }
 
     public Map<Plant, Production> getProductionMap() {
         return productionMap;
     }
 
-    public Map<Plant, MachineSet> getMachineMap() {
+    public Map<Plant, List<MachineSet>> getMachineMap() {
         return machineMap;
     }
 
@@ -101,14 +101,6 @@ public class Item extends Candidate implements Comparable<Item> {
 
     public Map<Plant, Map<Integer, Long>> getFrozenProductionMap() {
         return frozenProductionMap;
-    }
-
-    public void setCapacityType(CapacityType capacityType) {
-        this.capacityType = capacityType;
-    }
-
-    public void setRate(double rate) {
-        this.rate = rate;
     }
 
     public List<ProportionConstraint> getProportionConstraints() {
@@ -175,6 +167,58 @@ public class Item extends Candidate implements Comparable<Item> {
         for (Transit transit : transitMap.values()) {
             plants.add(transit.getFromPlant());
             plants.add(transit.getToPlant());
+        }
+    }
+
+
+    public long maxQuantityFromCapacity(Plant plant, int dateId) {
+        long maxQuantity = Long.MAX_VALUE;
+
+        List<MachineSet> machineSets = machineMap.get(plant);
+
+        for (MachineSet machineSet : machineSets) {
+            CapacityType capacityType = machineSet.getCapacityType();
+            double rate = rateMap.get(capacityType);
+
+            long quantity;
+
+            if (rate == 0) {
+                quantity = Long.MAX_VALUE;
+            } else {
+                double remCap = 0;
+                if (machineSet.getCapacityMap().containsKey(dateId))
+                    remCap = machineSet.getCapacityMap().get(dateId).getRemaining();
+
+                quantity = (long)(remCap / rate);
+            }
+
+            if (maxQuantity > quantity)
+                maxQuantity = quantity;
+        }
+
+        return maxQuantity;
+    }
+
+    public void addCapacity(Plant plant, int dateId, long quantity) {
+        List<MachineSet> machineSets = machineMap.get(plant);
+
+        for (MachineSet machineSet : machineSets) {
+            double rate = rateMap.get(machineSet.getCapacityType());
+
+            machineSet.getCapacityMap().get(dateId).addRemaining(rate * quantity);
+        }
+    }
+
+    public void reduceCapacity(Plant plant, int dateId, long quantity) {
+        List<MachineSet> machineSets = machineMap.get(plant);
+
+        for (MachineSet machineSet : machineSets) {
+            double rate = rateMap.get(machineSet.getCapacityType());
+
+            if (rate == 0)
+                continue;
+
+            machineSet.getCapacityMap().get(dateId).reduceRemaining(rate * quantity);
         }
     }
 
