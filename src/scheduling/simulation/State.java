@@ -1,18 +1,17 @@
 package scheduling.simulation;
 
-import com.sun.tools.doclint.Env;
+import org.apache.commons.math3.util.Pair;
 import scheduling.core.Environment;
 import scheduling.core.Schedule;
+import scheduling.core.SupplyChain;
 import scheduling.core.input.Item;
 import scheduling.core.input.Plant;
+import scheduling.core.input.Transit;
 import scheduling.scheduler.GreedyStaticScheduler;
 import scheduling.scheduler.Scheduler;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * The current state of the scheduler.
@@ -31,6 +30,8 @@ public class State {
     private Schedule plannedSchedule; // the planned schedule that is not executed yet.
     private Schedule executedSchedule; // the executed schedule so far (during the simulation)
 
+    private Map<Item, Map<Plant, SupplyChain>> supplyChainMap; // the supply chain of each item at each plant
+
     public State(Environment env, Schedule plannedSchedule, Schedule executedSchedule) {
         this.env = env;
         this.dateIndex = 0;
@@ -38,6 +39,23 @@ public class State {
         this.executedSchedule = executedSchedule;
 
         initDemMaps();
+        initSupplyChainMap();
+    }
+
+    /**
+     * The default plannedSchedule is an empty schedule.
+     * @param env the environment.
+     */
+    public State(Environment env) {
+        this.env = env;
+        this.dateIndex = 0;
+        plannedSchedule = new Schedule();
+        executedSchedule = new Schedule();
+
+        initDemMaps();
+        initSupplyChainMap();
+
+        plannedSchedule.initWithState(this);
     }
 
     /**
@@ -48,7 +66,7 @@ public class State {
     public static State staticProbFromFile(File file) {
         Environment env = Environment.readFromFile(file);
 
-        return new State(env, new Schedule(), new Schedule());
+        return new State(env);
     }
 
     public Environment getEnv() {
@@ -99,6 +117,17 @@ public class State {
         this.forecastDemMap = forecastDemMap;
     }
 
+    public Map<Item, Map<Plant, SupplyChain>> getSupplyChainMap() {
+        return supplyChainMap;
+    }
+
+    public void setSupplyChainMap(Map<Item, Map<Plant, SupplyChain>> supplyChainMap) {
+        this.supplyChainMap = supplyChainMap;
+    }
+
+    /**
+     * Initialise the order demand map and forecast demand map.
+     */
     public void initDemMaps() {
         orderDemMap = new HashMap<>();
         forecastDemMap = new HashMap<>();
@@ -126,14 +155,58 @@ public class State {
         }
     }
 
+    public void initSupplyChainMap() {
+        supplyChainMap = new HashMap<>();
+
+        for (Item item : env.getItemMap().values()) {
+            Map<Plant, SupplyChain> map = new HashMap<>();
+
+//            System.out.println("initialise chain for " + item.toString());
+
+            for (Plant plant : item.getPlants()) {
+//                System.out.println("initialising chain [" + item.toString() + ", " + plant.toString() + "]");
+
+                map.put(plant, new SupplyChain(item, plant));
+            }
+
+            supplyChainMap.put(item, map);
+        }
+
+        // link the supply chains through transit streams
+        for (Item item : env.getItemMap().values()) {
+            for (Plant plant : item.getPlants()) {
+                SupplyChain targetChain = supplyChainMap.get(item).get(plant);
+
+//                System.out.println("target chain [" + item.toString() + ", " + plant.toString() + "]");
+
+                for (Plant fromPlant : plant.getTransitInMap().keySet()) {
+                    // check whether one can transit the item between the plants
+                    if (!plant.getTransitInMap().get(fromPlant).contains(item))
+                        continue;
+
+                    Pair<Plant, Plant> pair = new Pair<>(fromPlant, plant);
+                    Transit transit = item.getTransitMap().get(pair);
+                    SupplyChain sourceChain = supplyChainMap.get(item).get(fromPlant);
+
+//                    System.out.println(item.toString() + ", " + plant.toString() + " <- " + fromPlant.toString());
+
+                    targetChain.getTransitStreamMap().put(transit, sourceChain);
+                }
+            }
+        }
+    }
+
     public static void main(String[] args) {
-        File file = new File("data/e_vuw_test_multi_plant_03.xlsx");
+        File file = new File("data/e_vuw_test_multi_plant_05.xlsx");
 
         State staticProb = State.staticProbFromFile(file);
 
         Scheduler scheduler = new GreedyStaticScheduler();
-        scheduler.makeSchedule(staticProb);
+        long start = System.currentTimeMillis();
+        scheduler.planSchedule(staticProb);
+        long finish = System.currentTimeMillis();
 
-        System.out.println("finished");
+        long duration = (finish - start);
+        System.out.println("finished, duration = " + duration);
     }
 }

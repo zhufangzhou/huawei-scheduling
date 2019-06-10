@@ -12,7 +12,7 @@ public class ProductionInstruction extends Instruction {
         super(startDate, endDate, item);
         this.production = production;
         this.lots = lots;
-        this.quantity = lots * production.getLotSize();
+        this.quantity = lots*production.getLotSize();
     }
 
     public Production getProduction() {
@@ -29,7 +29,7 @@ public class ProductionInstruction extends Instruction {
 
     public void setLots(long lots) {
         this.lots = lots;
-        this.quantity = lots * production.getLotSize();
+        this.quantity = lots*production.getLotSize();
     }
 
     public long getQuantity() {

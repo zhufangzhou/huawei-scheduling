@@ -319,6 +319,9 @@ public class Environment {
                 double capacity = Double.valueOf(df.formatCellValue(row.getCell(4)));
 
                 int dateIndex = TimePeriod.gap(startDate, date);
+
+//                System.out.println(set.toString() + ": [" + date + ", " + dateIndex + "]");
+
                 set.getCapacityMap().put(dateIndex, new Capacity(capacity));
             }
 
@@ -356,19 +359,19 @@ public class Environment {
                 item.putProduction(production);
             }
 
-            // Read the bom and merge into productions
+            // Read the boms and merge into productions
             sheet = wb.getSheetAt(ExcelProcessor.PLANT_BOM_IDX);
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
-                Item assembly = itemMap.get(df.formatCellValue(row.getCell(0)));
-                Item component = itemMap.get(df.formatCellValue(row.getCell(1)));
+                Item item = itemMap.get(df.formatCellValue(row.getCell(0)));
+                Item material = itemMap.get(df.formatCellValue(row.getCell(1)));
                 int quantity = Integer.valueOf(df.formatCellValue(row.getCell(2)));
                 SupplyType st = SupplyType.get(df.formatCellValue(row.getCell(3)));
                 Plant plant = plantMap.get(df.formatCellValue(row.getCell(8)));
 
-                Bom bom = new Bom(component, quantity, st);
-                assembly.getProduction(plant).addBom(bom);
+                BomComponent bomComponent = new BomComponent(material, quantity, st);
+                item.getProduction(plant).addBom(bomComponent);
             }
 
             // Read the item capacity type and rate
@@ -480,6 +483,13 @@ public class Environment {
                     if (production.getItem().getMachineMap().isEmpty()) {
                         productionMap.remove(production.getPlant());
                     }
+                }
+            }
+
+            // for each production, calculate the rate map
+            for (Item item : itemMap.values()) {
+                for (Production production : item.getProductionMap().values()) {
+                    production.calcRateMap();
                 }
             }
 

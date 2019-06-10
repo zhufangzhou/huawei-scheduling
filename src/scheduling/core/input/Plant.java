@@ -1,7 +1,5 @@
 package scheduling.core.input;
 
-import scheduling.simulation.Candidate;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -11,7 +9,7 @@ import java.util.Map;
  * A plant/factory.
  */
 
-public class Plant extends Candidate implements Comparable<Plant> {
+public class Plant implements Comparable<Plant> {
     private String name;
     private int lockedOutDays;
     private String type;

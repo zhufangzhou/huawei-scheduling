@@ -1,7 +1,6 @@
 package scheduling.core.input;
 
 import org.apache.commons.math3.util.Pair;
-import scheduling.simulation.Candidate;
 
 import java.util.*;
 
@@ -9,7 +8,7 @@ import java.util.*;
  * An item.
  */
 
-public class Item extends Candidate implements Comparable<Item> {
+public class Item implements Comparable<Item> {
     private String id;
     private ItemType type;
     private double materialCost;
@@ -151,7 +150,7 @@ public class Item extends Candidate implements Comparable<Item> {
     }
 
     /**
-     * Calculate the plants that can hold the item
+     * Calculate the plants that can hold the item.
      */
     public void calcPlants() {
         plants = new HashSet<>();
@@ -161,42 +160,13 @@ public class Item extends Candidate implements Comparable<Item> {
 
         // where it can be produced
         plants.addAll(productionMap.keySet());
-        plants.addAll(frozenProductionMap.keySet());
+//        plants.addAll(frozenProductionMap.keySet());
 
         // where it can be transit from/to
         for (Transit transit : transitMap.values()) {
             plants.add(transit.getFromPlant());
             plants.add(transit.getToPlant());
         }
-    }
-
-
-    public long maxQuantityFromCapacity(Plant plant, int dateId) {
-        long maxQuantity = Long.MAX_VALUE;
-
-        List<MachineSet> machineSets = machineMap.get(plant);
-
-        for (MachineSet machineSet : machineSets) {
-            CapacityType capacityType = machineSet.getCapacityType();
-            double rate = rateMap.get(capacityType);
-
-            long quantity;
-
-            if (rate == 0) {
-                quantity = Long.MAX_VALUE;
-            } else {
-                double remCap = 0;
-                if (machineSet.getCapacityMap().containsKey(dateId))
-                    remCap = machineSet.getCapacityMap().get(dateId).getRemaining();
-
-                quantity = (long)(remCap / rate);
-            }
-
-            if (maxQuantity > quantity)
-                maxQuantity = quantity;
-        }
-
-        return maxQuantity;
     }
 
     public void addCapacity(Plant plant, int dateId, long quantity) {
@@ -218,7 +188,7 @@ public class Item extends Candidate implements Comparable<Item> {
             if (rate == 0)
                 continue;
 
-            machineSet.getCapacityMap().get(dateId).reduceRemaining(rate * quantity);
+            machineSet.getCapacityMap().get(dateId).reduceRemaining(rate*quantity);
         }
     }
 
