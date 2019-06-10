@@ -284,7 +284,7 @@ public class Simulator {
 //                    SupplyType st = SupplyType.get(df.formatCellValue(row.getCell(3)));
 //                    Plant plant = plantMap.get(df.formatCellValue(row.getCell(8)));
 //
-//                    Bom bom = new Bom(component, quantity, st);
+//                    BomComponent bom = new BomComponent(component, quantity, st);
 //                    assembly.getProduction(plant).addBom(bom);
 //                }
 //

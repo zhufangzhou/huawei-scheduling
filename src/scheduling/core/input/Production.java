@@ -20,7 +20,8 @@ public class Production {
     private int minProduction;
     private int maxProduction;
     private int fixedDaysSupply;
-    private List<Bom> assembly;
+    private List<BomComponent> bom;
+    private Map<MachineSet, Double> rateMap; // the rate (capacity consumption) of the production
 
     public Production(Item item, Plant plant, double cost, int leadTime, int prevWeekProduction, int weekToDateProduction, int lotSize, int minProduction, int maxProduction, int fixedDaysSupply) {
         this.item = item;
@@ -34,7 +35,7 @@ public class Production {
         this.maxProduction = maxProduction;
         this.fixedDaysSupply = fixedDaysSupply;
 
-        assembly = new ArrayList<>();
+        bom = new ArrayList<>();
     }
 
     public Item getItem() {
@@ -77,12 +78,77 @@ public class Production {
         return fixedDaysSupply;
     }
 
-    public List<Bom> getAssembly() {
-        return assembly;
+    public List<BomComponent> getBom() {
+        return bom;
     }
 
-    public void addBom(Bom bom) {
-        assembly.add(bom);
+    public Map<MachineSet, Double> getRateMap() {
+        return rateMap;
+    }
+
+    public void addBom(BomComponent bomComponent) {
+        bom.add(bomComponent);
+    }
+
+    public void calcRateMap() {
+        rateMap = new HashMap<>();
+
+        List<MachineSet> machineSets = item.getMachineMap().get(plant);
+
+        for (MachineSet machineSet : machineSets) {
+            CapacityType capacityType = machineSet.getCapacityType();
+            double rate = item.getRateMap().get(capacityType);
+
+            rateMap.put(machineSet, rate);
+        }
+    }
+
+    /**
+     * Calculate the max quantity of the production based on the machines' capacity.
+     * @param dateId the date to start the production.
+     * @return the max quantity of the production based on the machines' capacity.
+     */
+    public long maxQuantityFromCapacity(int dateId) {
+        long maxQuantity = Long.MAX_VALUE;
+
+        List<MachineSet> machineSets = item.getMachineMap().get(plant);
+
+        for (MachineSet machineSet : machineSets) {
+            double rate = rateMap.get(machineSet);
+            long quantity;
+
+            if (rate == 0) {
+                quantity = Long.MAX_VALUE;
+            } else {
+                double remCap = 0;
+                if (machineSet.getCapacityMap().containsKey(dateId))
+                    remCap = machineSet.getCapacityMap().get(dateId).getRemaining();
+
+                quantity = (long)(remCap/rate);
+            }
+
+            if (maxQuantity > quantity)
+                maxQuantity = quantity;
+        }
+
+        return maxQuantity;
+    }
+
+    /**
+     * Calculate the number of lots to provide at least quantity,
+     * but no greater than a max quantity.
+     * @param quantity the quantity to be provided.
+     * @param maxQuantity the max quantity.
+     * @return the number of lots.
+     */
+    public long lots(long quantity, long maxQuantity) {
+        // lots1 is the minimum lots to provide at least quantity
+        long lots = (long)(Math.ceil(1.0*quantity/lotSize));
+
+        if (lots > maxQuantity/lotSize)
+            lots--;
+
+        return lots;
     }
 
     @Override

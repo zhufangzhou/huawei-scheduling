@@ -37,7 +37,7 @@ public class ProductionStartEvent extends Event {
 
 //        int date = state.getDate();
 //
-//        for (Bom bom : production.getAssembly()) {
+//        for (BomComponent bom : production.getAssembly()) {
 //            Item component = bom.getComponent();
 //            int n = bom.getQuantity();
 //

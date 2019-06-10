@@ -138,28 +138,42 @@ public class TimePeriod {
     }
 
     /**
-     * The next date (integer representation) of a date.
-     * @param date the date.
-     * @return the next date.
+     * Get the date representation of a date id.
+     * @param startDate the start date.
+     * @param id the date id.
+     * @return the date representation.
      */
-    public static int nextDate(int date) {
-        int year = getYear(date);
-        int month = getMonth(date);
-        int day = getDay(date);
+    public static int dateOfId(int startDate, int id) {
+        int year = getYear(startDate);
+        int month = getMonth(startDate);
+        int day = getDay(startDate);
 
-        day ++;
+        day += id;
 
-        if (day > getDaysInMonth(month, year)) {
+        int daysInMonth = getDaysInMonth(year, month);
+        while (day > daysInMonth) {
+            day -= daysInMonth;
+
             month ++;
-            day = 1;
 
             if (month > 12) {
                 year ++;
                 month = 1;
             }
+
+            daysInMonth = getDaysInMonth(year, month);
         }
 
         return dateOf(year, month, day);
+    }
+
+    /**
+     * The next date (integer representation) of a date.
+     * @param date the date.
+     * @return the next date.
+     */
+    public static int nextDate(int date) {
+        return dateOfId(date, 1);
     }
 
     public static int getDaysInMonth(int year, int month) {

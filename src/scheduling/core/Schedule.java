@@ -30,7 +30,7 @@ public class Schedule {
     private Map<Integer, Map<Item, Long>> forecastSupplyMap; // need to calculate delay efficiently
     private Map<Integer, Map<Item, Long>> accOrderDemMap; // accumulated order demand each day
 
-    private double inventoryCost;
+    private double holdingCost;
     private double productionCost;
     private double transitCost;
     private long totalDelay;
@@ -48,7 +48,7 @@ public class Schedule {
         forecastSupplyMap = new HashMap<>();
         accOrderDemMap = new HashMap<>();
 
-        inventoryCost = 0d;
+        holdingCost = 0d;
         productionCost = 0d;
         transitCost = 0d;
         totalDelay = 0l;
@@ -134,12 +134,12 @@ public class Schedule {
         this.accOrderDemMap = accOrderDemMap;
     }
 
-    public double getInventoryCost() {
-        return inventoryCost;
+    public double getHoldingCost() {
+        return holdingCost;
     }
 
-    public void setInventoryCost(double inventoryCost) {
-        this.inventoryCost = inventoryCost;
+    public void setHoldingCost(double holdingCost) {
+        this.holdingCost = holdingCost;
     }
 
     public double getProductionCost() {
@@ -303,7 +303,7 @@ public class Schedule {
                     totalInventory += inventoryMap.get(dateId).get(item).get(plant).getTotal();
                 }
 
-                inventoryCost += totalInventory * item.getHoldingCost();
+                holdingCost += totalInventory * item.getHoldingCost();
             }
         }
 
@@ -332,7 +332,7 @@ public class Schedule {
     /**
      * Add the inventory of an item at a plant at a specific date id.
      * The inventory is increased by this amount from that day on.
-     * The inventory cost is increase accordingly.
+     * The holding cost is increase accordingly.
      * @param dateId the date id.
      * @param item the item.
      * @param plant the plant.
@@ -358,14 +358,14 @@ public class Schedule {
             inventory.setFree(free);
         }
 
-        // increase the inventory cost
-        inventoryCost += item.getHoldingCost() * quantity * (endDateId-dateId);
+        // increase the holding cost
+        holdingCost += item.getHoldingCost() * quantity * (endDateId-dateId);
     }
 
     /**
      * Remove the inventory of an item at a plant at a specific date id.
      * The inventory is decreased by this amount from that day on.
-     * The inventory cost is decreased accordingly.
+     * The holding cost is decreased accordingly.
      * @param dateId the date id.
      * @param item the item.
      * @param plant the plant.
@@ -391,8 +391,8 @@ public class Schedule {
             inventory.setFree(free);
         }
 
-        // decrease the inventory cost
-        inventoryCost -= item.getHoldingCost()*quantity*(endDateId-dateId);
+        // decrease the holding cost
+        holdingCost -= item.getHoldingCost()*quantity*(endDateId-dateId);
     }
 
     /**
@@ -630,54 +630,19 @@ public class Schedule {
         }
     }
 
+
     /**
-     * Calculate the maximal production quantity of a production in a date id.
-     * The maximal quantity depends on
-     *   (1) the remaining capacity of the machine;
-     *   (2) the inventory of the boms;
-     *   (3) the maximal production.
-     * @param production the production.
-     * @param dateId the date id.
-     * @return the maximal production quantity.
+     * Add a production to the schedule in a specific start date id.
+     * @param dateId the start date id.
+     * @param production the added production.
+     * @param lots the lots of the production.
      */
-    public long maxProductionQuantity(Production production, int dateId) {
-        Item item = production.getItem();
-        Plant plant = production.getPlant();
-        List<Bom> assembly = production.getAssembly();
-        // get the max quantity from the machine capacities for this production
-        long maxQuantity1 = item.maxQuantityFromCapacity(plant, dateId);
-
-        // check the inventory of the boms at the plant
-        List<Long> bomInventories = new ArrayList<>();
-        for (Bom bom : assembly) {
-            long bomInve = inventoryMap.get(dateId).get(bom.getComponent()).get(plant).getFree();
-            bomInventories.add(bomInve);
-        }
-
-        long maxQuantity2 = Long.MAX_VALUE;
-        for (int i = 0; i < assembly.size(); i++) {
-            long quantity = bomInventories.get(i) / assembly.get(i).getQuantity();
-
-            if (maxQuantity2 > quantity)
-                maxQuantity2 = quantity;
-        }
-
-        long maxQuantity = maxQuantity1;
-        if (maxQuantity > maxQuantity2)
-            maxQuantity = maxQuantity2;
-
-        if (maxQuantity > production.getMaxProduction())
-            maxQuantity = production.getMaxProduction();
-
-        return maxQuantity;
-    }
-
     public void addProduction(int dateId, Production production, long lots) {
         int prodStartDate = dateId;
         int prodEndDate = prodStartDate+production.getLeadTime();
         Item item = production.getItem();
         Plant plant = production.getPlant();
-        long prodQuantity = production.getLotSize() * lots;
+        long quantity = production.getLotSize()*lots;
 
         // add the instruction
         Map<Production, ProductionInstruction> dailyProdSchedule = productionSchedule.get(dateId);
@@ -692,19 +657,60 @@ public class Schedule {
         }
 
         // remove the capacity of the machines in the production start date
-        item.reduceCapacity(plant, prodStartDate, prodQuantity);
+        item.reduceCapacity(plant, prodStartDate, quantity);
 
         // remove the inventory of the boms when the production is finished
-        for (Bom bom : production.getAssembly()) {
-            Item component = bom.getComponent();
-            long quantity = prodQuantity * bom.getQuantity();
-            removeInventory(prodEndDate, component, plant, quantity);
+        for (BomComponent bomComponent : production.getBom()) {
+            Item component = bomComponent.getMaterial();
+            long bomQuantity = quantity*bomComponent.getQuantity();
+            removeInventory(prodEndDate, component, plant, bomQuantity);
+
+            // add the holding cost of the bom during the production
+            holdingCost += component.getHoldingCost()*bomQuantity*(prodEndDate-prodStartDate);
         }
 
         // add the inventory of the produced item when the production is finished
-        addInventory(prodEndDate, item, plant, prodQuantity);
+        addInventory(prodEndDate, item, plant, quantity);
 
         // add the production cost
-        productionCost += production.getCost() * lots;
+        productionCost += production.getCost()*lots*production.getLotSize();
+    }
+
+    /**
+     * Add a transit to the schedule starting in a specific date.
+     * @param dateId the start date id.
+     * @param transit the transit.
+     * @param quantity the quantity.
+     */
+    public void addTransit(int dateId, Transit transit, long quantity) {
+        int tranStartDate = dateId;
+        int tranEndDate = tranStartDate+transit.getLeadTime();
+        Item item = transit.getItem();
+        Plant fromPlant = transit.getFromPlant();
+        Plant toPlant = transit.getToPlant();
+
+        // add the instruction
+        Map<Transit, TransitInstruction> dailyTranSchedule = transitSchedule.get(dateId);
+        if (dailyTranSchedule.containsKey(transit)) {
+            TransitInstruction instruction = dailyTranSchedule.get(transit);
+            long old = instruction.getQuantity();
+            instruction.setQuantity(old+quantity);
+        } else {
+            TransitInstruction instruction =
+                    new TransitInstruction(tranStartDate, tranEndDate, item, transit, quantity);
+            dailyTranSchedule.put(transit, instruction);
+        }
+
+        // remove the inventory of the item in the source plant
+        removeInventory(tranStartDate, item, fromPlant, quantity);
+
+        // add the inventory of the item in the target plant
+        addInventory(tranEndDate, item, toPlant, quantity);
+
+        // add the holding cost during the transit
+        holdingCost += item.getHoldingCost()*quantity*(tranEndDate-tranStartDate);
+
+        // add the transit cost
+        transitCost += transit.getCost()*quantity;
     }
 }
