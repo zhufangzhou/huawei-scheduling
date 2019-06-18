@@ -59,7 +59,7 @@ import java.util.regex.*;
  * &lt;op> ::= (if-food-ahead &lt;op> &lt;op>) | (progn2 &lt;op> &lt;op>) | (progn3 &lt;op> &lt;op> &lt;op>) | (left) | (right) | (move)<br>
  * </tt>
  *
- * <p>Note that you can use several lines to define the same dagp rule: for example, <tt>&lt;op></tt> was defined by several lines when
+ * <p>Note that you can use several lines to define the same dagp priorityRule: for example, <tt>&lt;op></tt> was defined by several lines when
  * it could have consisted of several elements separated by vertical pipes ( <tt>|</tt> ).  Either way is fine, or a combination of both.
  *
  * <p>GPNodes are included in the dagp by using their name.  This includes ERCs, ADFs, ADMs, and ADFArguments, which should all work just fine.
@@ -68,19 +68,19 @@ import java.util.regex.*;
  *
  * <p>Once the gammar file has been created and setup has been run trees can the be created using the genome (chromosome) of a GEIndividual.
  * A genome of an individual is an array of random integers each of which are one int long.  These numbers are used when a decision point
- * (a rule having more that one choice) is reached within the dagp.  Once a particular gene (index) in the genome has been used it will
+ * (a priorityRule having more that one choice) is reached within the dagp.  Once a particular gene (index) in the genome has been used it will
  * not be used again (this may change) when creating the tree.
  *
  * <p>For example:<br>
  * number of chromosomes used = 0<br>
  * genome = {23, 654, 86}<br>
- * the current rule we are considering is &lt;op>.<br>
+ * the current priorityRule we are considering is &lt;op>.<br>
  * %lt;op> can map into one of the following: (if-food-ahead &lt;op> &lt;op>) | (progn2 &lt;op> &lt;op>) | (progn3 &lt;op> &lt;op> &lt;op>)
  * | (left) | (right) | (move)<br>
- * Since the rule &lt;op> has more than one choice that it can map to, we must consult the genome to decide which choice to take.  In this case
+ * Since the priorityRule &lt;op> has more than one choice that it can map to, we must consult the genome to decide which choice to take.  In this case
  * the number of chromosomes used is 0 so genome[0] is used and number of chromosomes used is incremented.  Since values in the genome can
  * be negitive values they are offset by 128 (max negitive of a int) giving us a value from 0-255.  A modulus is performed on this resulting
- * number by the number of choices present for the given rule.  In the above example since we are using genome[0] the resulting operation would
+ * number by the number of choices present for the given priorityRule.  In the above example since we are using genome[0] the resulting operation would
  * look like: 23+128=151, number of choices for &lt;op> = 6, 151%6=1 so we use choices[1] which is: (progn2 &lt;op> &lt;op>).  If all the genes
  * in a genome are used and the tree is still incompete an invalid tree error is returned.
  *
@@ -382,14 +382,14 @@ public class GESpecies extends IntegerVectorSpecies
         if (index[0] >= genome.length)
             throw new BigTreeException();
 
-        // expand the rule with the chromosome to get a body element
+        // expand the priorityRule with the chromosome to get a body element
         int i;
 
-        // non existant rule got passed in
+        // non existant priorityRule got passed in
         if (rule == null)
-            es.output.fatal("An undefined rule exists within the dagp.");
+            es.output.fatal("An undefined priorityRule exists within the dagp.");
                 
-        // more than one rule to consider, pick one based off the genome, and consume the current gene
+        // more than one priorityRule to consider, pick one based off the genome, and consume the current gene
         // avoid mod operation as much as possible
         if (rule.getNumChoices() > 1)
             i = (genome[index[0]] - ((int)this.minGene(index[0]))) % rule.getNumChoices();
@@ -398,8 +398,8 @@ public class GESpecies extends IntegerVectorSpecies
         index[0]++;
         GrammarNode choice = rule.getChoice(i);
 
-        // if body is another rule head
-        // look up rule
+        // if body is another priorityRule head
+        // look up priorityRule
         if(choice instanceof GrammarRuleNode)
             {
             GrammarRuleNode nextrule = (GrammarRuleNode) choice;
@@ -684,7 +684,7 @@ public class GESpecies extends IntegerVectorSpecies
                     int rIndex = ((Integer)gp.ruleHeadToIndex.get(stack.peek())).intValue();
                     int fIndex = ((Integer)gp.functionHeadToIndex.get(token)).intValue();
                     Integer ruleIndex = new Integer(gp.predictiveParseTable[rIndex][fIndex]);
-                    // get the action (rule) to expand
+                    // get the action (priorityRule) to expand
                     GrammarNode action = (GrammarNode)gp.indexToRule.get(ruleIndex);
                     // if the index is still in the range of minGene.length, use it.
                     // otherwise use the minGene[0] value.
@@ -696,11 +696,11 @@ public class GESpecies extends IntegerVectorSpecies
                     action = action.children.get(0);
                     if(action instanceof GrammarFunctionNode)
                         {
-                        // push the rule (action) arguments in reverse way
+                        // push the priorityRule (action) arguments in reverse way
                         for(int i = ((GrammarFunctionNode)action).getNumArguments() - 1 
                                 ; i >= 0 ; i--)
                             stack.push(((GrammarFunctionNode)action).getArgument(i).getHead());
-                        // the rule (action) head should be on the top
+                        // the priorityRule (action) head should be on the top
                         stack.push(action.getHead());
                         }
                     else if(action instanceof GrammarRuleNode) // push as usual

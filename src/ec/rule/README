@@ -29,7 +29,7 @@ You're welcome to modify this as you see fit of course.  Rules are likewise
 associated with RuleConstraints in which they can store common information
 (presently nothing is stored).
 
-To set up the constraints objects, the rule package requires that your
+To set up the constraints objects, the priorityRule package requires that your
 initializer be a subclass of RuleInitializer.
 
 The 'breed' directory contains two breeding pipelines which might be of use.
@@ -38,17 +38,17 @@ RuleCrossover trades rules among rulesets using the following algorithm:
 	For i from 1 to the number of rulesets
 		r1 = ruleset i in individual A
 		r2 = ruleset i in individual B
-		For each rule in r1
+		For each priorityRule in r1
 			With a given probability,
-				mark that rule to go to r2
-		For each rule in r2
+				mark that priorityRule to go to r2
+		For each priorityRule in r2
 			With a given probability,
-				mark that rule to go to r1
+				mark that priorityRule to go to r1
 		Exchange marked rules between r1 and r2
 
-You specify the rule exchange probability.  The RuleMutation operator simply
+You specify the priorityRule exchange probability.  The RuleMutation operator simply
 calls mutateRules() on all the rulesets.  The default mutateRules() function
 first calls mutate() on al the rules in the ruleset.  It then deletes rules from
 the ruleset with a certain probability.  It then adds new rules to the ruleset
-with a certain probability.  Finally it randomizes the rule order of the ruleset
+with a certain probability.  Finally it randomizes the priorityRule order of the ruleset
 with a certain probability.

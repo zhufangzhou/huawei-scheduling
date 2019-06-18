@@ -4,9 +4,7 @@ import org.apache.commons.math3.util.Pair;
 import scheduling.core.Environment;
 import scheduling.core.Schedule;
 import scheduling.core.SupplyChain;
-import scheduling.core.input.Item;
-import scheduling.core.input.Plant;
-import scheduling.core.input.Transit;
+import scheduling.core.input.*;
 import scheduling.scheduler.GreedyStaticScheduler;
 import scheduling.scheduler.Scheduler;
 
@@ -197,7 +195,7 @@ public class State {
     }
 
     public static void main(String[] args) {
-        File file = new File("data/e_vuw_test_multi_plant_05.xlsx");
+        File file = new File("data/e_vuw_test_multi_plant_06.xlsx");
 
         State staticProb = State.staticProbFromFile(file);
 
@@ -206,7 +204,7 @@ public class State {
         scheduler.planSchedule(staticProb);
         long finish = System.currentTimeMillis();
 
-        long duration = (finish - start);
+        long duration = (finish-start);
         System.out.println("finished, duration = " + duration);
     }
 }

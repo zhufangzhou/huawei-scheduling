@@ -26,7 +26,7 @@ import ec.util.*;
  child individuals.  Optionally, it can take two individuals, cross them over, but throw
  away the second child (a one-child crossover).  RuleCrossoverPipeline works by iteratively taking rulesets
  from each individual, and migrating rules from either to the other with a certain
- per-rule probability.  Rule crossover preserves the min and max rule restrictions.
+ per-priorityRule probability.  PriorityRule crossover preserves the min and max priorityRule restrictions.
   
  <p><b>Typical Number of Individuals Produced Per <tt>produce(...)</tt> call</b><br>
  1 or 2
@@ -41,11 +41,11 @@ import ec.util.*;
  <td valign=top>(after crossing over with the first new individual, should its second sibling individual be thrown away instead of adding it to the population?)</td></tr>
  <tr><td valign=top><i>base</i>.<tt>prob</tt><br>
  <font size=-1>0.0 &lt;= double &lt; 1.0, or 0.5 (default)</font>/td>
- <td valign=top>(probability that a rule will cross over from one individual to the other)</td></tr>
+ <td valign=top>(probability that a priorityRule will cross over from one individual to the other)</td></tr>
  </table>
 
  <p><b>Default Base</b><br>
- rule.xover
+ priorityRule.xover
 
  * @author Sean Luke
  * @version 1.0
@@ -62,7 +62,7 @@ public class RuleCrossoverPipeline extends BreedingPipeline
     /** Should the pipeline discard the second parent after crossing over? */
     public boolean tossSecondParent;
     
-    /** What is the probability of a rule migrating? */
+    /** What is the probability of a priorityRule migrating? */
     public double ruleCrossProbability;
 
     /** Temporary holding place for parents */
@@ -93,7 +93,7 @@ public class RuleCrossoverPipeline extends BreedingPipeline
         ruleCrossProbability = state.parameters.getDoubleWithDefault(base.push(P_CROSSOVERPROB),
             def.push(P_CROSSOVERPROB),0.5f);
         if (ruleCrossProbability > 1.0 || ruleCrossProbability < 0.0) 
-            state.output.fatal("Rule cross probability must be between 0 and 1",base.push(P_CROSSOVERPROB),
+            state.output.fatal("PriorityRule cross probability must be between 0 and 1",base.push(P_CROSSOVERPROB),
                 def.push(P_CROSSOVERPROB));
         }
         
@@ -154,12 +154,12 @@ public class RuleCrossoverPipeline extends BreedingPipeline
 
             if( parents[0].rulesets.length != parents[1].rulesets.length )
                 {
-                state.output.fatal( "The number of rule sets should be identical in both parents ( " +
+                state.output.fatal( "The number of priorityRule sets should be identical in both parents ( " +
                     parents[0].rulesets.length + " : " +
                     parents[1].rulesets.length + " )." );
                 }
 
-            // for each set of rules (assume both individuals have the same number of rule sets)
+            // for each set of rules (assume both individuals have the same number of priorityRule sets)
             for( int x = 0 ; x < parents[0].rulesets.length ; x++ )
                 {
                 RuleSet[] temp = new RuleSet[2];

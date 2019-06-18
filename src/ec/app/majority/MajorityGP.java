@@ -14,7 +14,7 @@ import ec.simple.*;
 /**
    MajorityGP.java
         
-   Implements a GP-style vector rule for the one-dimensional Majority-Ones cellular automaton problem.
+   Implements a GP-style vector priorityRule for the one-dimensional Majority-Ones cellular automaton problem.
    This code is in the spirit of Das, Crutchfield, Mitchel, and Hanson, "Evolving Globally Synchronized Cellular AUtomata",
    http://web.cecs.pdx.edu/~mm/EGSCA.pdf
    
@@ -163,7 +163,7 @@ public class MajorityGP extends GPProblem implements SimpleProblemForm
 
                 int sum = 0;
             
-                // extract the rule
+                // extract the priorityRule
                 ((GPIndividual)ind).trees[0].child.eval(
                     state,threadnum,input,stack,((GPIndividual)ind),this);
 
@@ -210,7 +210,7 @@ public class MajorityGP extends GPProblem implements SimpleProblemForm
 
         MajorityData input = (MajorityData)(this.input);
 
-        // extract the rule
+        // extract the priorityRule
         ((GPIndividual)ind).trees[0].child.eval(
             state,threadnum,input,stack,((GPIndividual)ind),this);
                 
@@ -221,8 +221,8 @@ public class MajorityGP extends GPProblem implements SimpleProblemForm
             rule[i] = (int)(((input.data1) >> (i - 64)) & 0x1);
         ca.setRule(rule);  // for good measure though it doesn't matter
 
-        // print rule                
-        String s = "Rule: ";
+        // print priorityRule
+        String s = "PriorityRule: ";
         for(int i = 0; i < rule.length; i++)
             s += rule[i];
         state.output.println(s, log);

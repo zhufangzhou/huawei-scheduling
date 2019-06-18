@@ -17,23 +17,29 @@ import java.util.Map;
  * A stream is providing the items only if it is active.
  */
 public class SupplyChain implements Comparable<SupplyChain> {
-    protected Item item; // the final item provided by this supply chain
-    protected Plant plant; // the plant that provides the item
+    protected int dateId; // the date id that the supply chain can provide the item
+    protected Item item; // the final item provided by this supply chain.
+    protected Plant plant; // the plant that provides the item.
     protected boolean active; // whether it is active or not.
     protected boolean prodActive; // whether the production stream is active or not.
     protected long maxQuantity; // the max quantity of all the current active streams.
-    protected long inventory; // the free inventory of the item in the plant.
     protected long maxProdQuantity; // the max production quantity of the active stream
-    protected Map<Transit, SupplyChain> transitStreamMap;
+
+    protected long inventory; // the free inventory of the item in the plant.
     protected Production production; // the production
     protected Map<BomComponent, SupplyChain> bomStreamMap;
+    protected Map<Transit, SupplyChain> transitStreamMap;
+
     protected int leadTime; // the lead time of the supply chain with the active streams
     protected double holdingCost; // the holding cost changed by the supply chain
     protected double productionCost; // the production cost changed by the supply chain
     protected double transitCost; // the transit cost changed by the supply chain
     protected double totalCost; // the total cost changed by the supply chain
+
     protected int length; // the length of the chain (number of steps)
     protected boolean visited; // whether it is visited during the activation process
+
+    protected double priority;
 
     public SupplyChain(Item item, Plant plant) {
         this.item = item;
@@ -54,6 +60,14 @@ public class SupplyChain implements Comparable<SupplyChain> {
 
         // the transit stream map will be generated externally
         transitStreamMap = new HashMap<>();
+    }
+
+    public int getDateId() {
+        return dateId;
+    }
+
+    public void setDateId(int dateId) {
+        this.dateId = dateId;
     }
 
     public Item getItem() {
@@ -192,6 +206,14 @@ public class SupplyChain implements Comparable<SupplyChain> {
         this.visited = visited;
     }
 
+    public double getPriority() {
+        return priority;
+    }
+
+    public void setPriority(double priority) {
+        this.priority = priority;
+    }
+
     /**
      * To activate the streams of this supply chain,
      * given a schedule and the date to provide the item.
@@ -228,7 +250,7 @@ public class SupplyChain implements Comparable<SupplyChain> {
             for (Transit transit : transitStreamMap.keySet()) {
                 int transitStartTime = dateId-transit.getLeadTime();
 
-                // the transit cannot start in time.
+                // the transit cannot start in time, skip.
                 if (transitStartTime < schedule.getStartDateId())
                     continue;
 
@@ -247,8 +269,6 @@ public class SupplyChain implements Comparable<SupplyChain> {
                     // find a new stream with smaller lead time
                     leadTime = totalLeadTime;
                 }
-
-                //TODO activate the transit stream
             }
 
             int prodLeadTime = Integer.MAX_VALUE;
@@ -301,6 +321,9 @@ public class SupplyChain implements Comparable<SupplyChain> {
                 // active all the streams with smallest lead time
                 for (Transit transit : transitStreamMap.keySet()) {
                     SupplyChain chain = transitStreamMap.get(transit);
+
+                    if (chain.getMaxQuantity() == 0)
+                        continue;
 
                     if (chain.getLeadTime()+transit.getLeadTime() == leadTime) {
                         maxQuantity += chain.getMaxQuantity();
@@ -514,6 +537,41 @@ public class SupplyChain implements Comparable<SupplyChain> {
         }
     }
 
+    public SupplyChain cloneActive() {
+        SupplyChain cloned = new SupplyChain(item, plant);
+        cloned.setDateId(dateId);
+        cloned.setActive(active);
+        cloned.setProdActive(prodActive);
+        cloned.setMaxQuantity(maxQuantity);
+        cloned.setMaxProdQuantity(maxProdQuantity);
+        cloned.setInventory(inventory);
+
+        if (prodActive) {
+            cloned.setProduction(production);
+            for (BomComponent component : bomStreamMap.keySet()) {
+                SupplyChain clonedBomStream = bomStreamMap.get(component).cloneActive();
+                cloned.getBomStreamMap().put(component, clonedBomStream);
+            }
+        }
+
+        for (Transit transit : transitStreamMap.keySet()) {
+            SupplyChain transitStream = transitStreamMap.get(transit);
+
+            if (transitStream.isActive()) {
+                cloned.getTransitStreamMap().put(transit, transitStream.cloneActive());
+            }
+        }
+
+        cloned.setLeadTime(leadTime);
+        cloned.setHoldingCost(holdingCost);
+        cloned.setProductionCost(productionCost);
+        cloned.setTransitCost(transitCost);
+        cloned.setTotalCost(totalCost);
+        cloned.setLength(length);
+
+        return cloned;
+    }
+
     @Override
     public String toString() {
         return "{" + item.toString() + ", " + plant.toString() + "}";
@@ -521,13 +579,14 @@ public class SupplyChain implements Comparable<SupplyChain> {
 
     @Override
     public int compareTo(SupplyChain o) {
-        // compare length first
-        if (length < o.length)
+        // first compare the max quantity
+        if (maxQuantity > o.maxQuantity)
             return -1;
 
-        if (length > o.length)
+        if (maxQuantity < o.maxQuantity)
             return 1;
 
-        return 0;
+        // then compare the plant
+        return plant.compareTo(o.plant);
     }
 }

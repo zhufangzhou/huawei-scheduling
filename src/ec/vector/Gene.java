@@ -88,7 +88,7 @@ public abstract class Gene implements Prototype
         
 
 
-    /** Generates a hash code for this gene -- the rule for this is that the hash code
+    /** Generates a hash code for this gene -- the priorityRule for this is that the hash code
         must be the same for two genes that are equal to each other genetically. */
     public abstract int hashCode();
     

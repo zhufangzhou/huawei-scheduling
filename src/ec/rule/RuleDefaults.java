@@ -17,7 +17,7 @@ import ec.*;
  */
 
 /**
- * A static class that returns the base for "default values" which rule-style
+ * A static class that returns the base for "default values" which priorityRule-style
  * operators use, rather than making the user specify them all on a per-
  * species basis.
  *
@@ -27,7 +27,7 @@ import ec.*;
 
 public final class RuleDefaults implements DefaultsForm
     {
-    public static final String P_RULE = "rule";
+    public static final String P_RULE = "priorityRule";
 
     /** Returns the default base. */
     public static final Parameter base()

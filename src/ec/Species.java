@@ -19,7 +19,7 @@ import java.io.*;
 /**
  * Species is a prototype which defines the features for a set of individuals
  * in the population.  Typically, individuals may breed if they belong to the
- * same species (but it's not a hard-and-fast rule).  Each Subpopulation has
+ * same species (but it's not a hard-and-fast priorityRule).  Each Subpopulation has
  * one Species object which defines the species for individuals in that
  * Subpopulation.
  *

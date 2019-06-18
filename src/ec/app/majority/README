@@ -1,7 +1,7 @@
 This directory contains two attempts to replicate famous papers regarding
 the Majority Classification Problem.   In the Majority Classification Problem
 you are given a 7-neighborhood toroidal one-dimensional boolean cellular
-automaton, and your task is to develop a cellular automaton rule which,
+automaton, and your task is to develop a cellular automaton priorityRule which,
 when applied to an automaton of bits, either coverges to all true or all
 false depending on whether the majority of those bits were true or false.
 It's known to be impossible: the question is how close you can get.

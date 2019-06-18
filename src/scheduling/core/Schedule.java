@@ -24,6 +24,7 @@ public class Schedule {
     private Map<Integer, Map<Production, ProductionInstruction>> productionSchedule;
     private Map<Integer, Map<Transit, TransitInstruction>> transitSchedule;
     private Map<Integer, Map<Pair<Item, Plant>, SupplyInstruction>> supplySchedule;
+    private Map<SupplyChain, Long> supplyChainMap;
 
     private Map<Integer, Map<Item, Map<Plant, Inventory>>> inventoryMap; // the inventory of each item at each plant in each day
     private Map<Integer, Map<Item, Long>> orderSupplyMap; // needed to calculate delay efficiently
@@ -42,6 +43,7 @@ public class Schedule {
         productionSchedule = new HashMap<>();
         transitSchedule = new HashMap<>();
         supplySchedule = new HashMap<>();
+        supplyChainMap = new HashMap<>();
 
         inventoryMap = new HashMap<>();
         orderSupplyMap = new HashMap<>();
@@ -100,6 +102,14 @@ public class Schedule {
 
     public void setSupplySchedule(Map<Integer, Map<Pair<Item, Plant>, SupplyInstruction>> supplySchedule) {
         this.supplySchedule = supplySchedule;
+    }
+
+    public Map<SupplyChain, Long> getSupplyChainMap() {
+        return supplyChainMap;
+    }
+
+    public void setSupplyChainMap(Map<SupplyChain, Long> supplyChainMap) {
+        this.supplyChainMap = supplyChainMap;
     }
 
     public Map<Integer, Map<Item, Map<Plant, Inventory>>> getInventoryMap() {
@@ -293,6 +303,31 @@ public class Schedule {
 
             accOrderDemMap.put(dateId, dailyAccOrderDem);
         }
+
+//        // calculate the remaining demand maps
+//        remOrderDemMap = new HashMap<>();
+//        remForcastDemMap = new HashMap<>();
+//
+//        for (Item item : state.getEnv().getItemMap().values()) {
+//            TreeMap<Integer, Demand> odMap = new TreeMap<>();
+//
+//            for (int dateId : item.getOrderDemandMap().keySet()) {
+//                Demand od = new OrderDemand(dateId, item, item.getOrderDemandMap().get(dateId));
+//                odMap.put(dateId, od);
+//            }
+//
+//            TreeMap<Integer, Demand> fdMap = new TreeMap<>();
+//            for (int dateId : item.getForecastDemandMap().keySet()) {
+//                Demand fd = new ForecastDemand(dateId, item, item.getForecastDemandMap().get(dateId));
+//                fdMap.put(dateId, fd);
+//            }
+//
+//            if (!odMap.isEmpty())
+//                remOrderDemMap.put(item, odMap);
+//
+//            if (!fdMap.isEmpty())
+//                remForcastDemMap.put(item, fdMap);
+//        }
 
         // calculate the inventory cost by summing up for all the days
         for (int dateId = startDateId; dateId < endDateId; dateId++) {

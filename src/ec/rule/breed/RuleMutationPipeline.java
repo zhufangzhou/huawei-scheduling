@@ -33,7 +33,7 @@ import ec.util.*;
  1
 
  <p><b>Default Base</b><br>
- rule.mutate (not that it matters)
+ priorityRule.mutate (not that it matters)
 
  * @author Sean Luke
  * @version 1.0

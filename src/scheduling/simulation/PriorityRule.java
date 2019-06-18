@@ -1,12 +1,19 @@
 package scheduling.simulation;
 
-import java.util.Comparator;
 import java.util.List;
 
-public abstract class Rule <T> {
+/**
+ * A priority rule selects the next from the pool based on priority.
+ * @param <T> the type of the elements in the pool.
+ */
+
+public abstract class PriorityRule<T> {
     protected String name;
 
-    public Rule(String name) {
+    public PriorityRule() {
+    }
+
+    public PriorityRule(String name) {
         this.name = name;
     }
 
@@ -20,7 +27,7 @@ public abstract class Rule <T> {
      * @param tieBreaker the tie breaker.
      * @return the next candidate.
      */
-    public T next(DecisionSituation<T> decisionSituation, TieBreaker tieBreaker) {
+    public T next(DecisionSituation<T> decisionSituation, TieBreaker<T> tieBreaker) {
         List<T> pool = decisionSituation.getPool();
         State state = decisionSituation.getState();
 
@@ -31,7 +38,8 @@ public abstract class Rule <T> {
             T tmp = pool.get(i);
             double tmpPriority = priority(tmp, state);
 
-            if (Double.compare(tmpPriority, bestPriority) < 0 ||
+            // the higher priority is preferred
+            if (Double.compare(tmpPriority, bestPriority) > 0 ||
                     (Double.compare(tmpPriority, bestPriority) == 0 &&
                     tieBreaker.breakTie(tmp, best, state) < 0)) {
                 best = tmp;

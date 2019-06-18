@@ -6,12 +6,10 @@ import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import scheduling.core.input.*;
+import util.DisjointSets;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * An environment stores the global information in the scheduling process.
@@ -272,11 +270,13 @@ public class Environment {
                 int dueDate = timePeriod.dueDate();
                 int dueDateIndex = TimePeriod.gap(startDate, dueDate);
 
-                if (odem > 0)
+                if (odem > 0) {
                     item.getOrderDemandMap().put(dueDateIndex, odem);
+                }
 
-                if (fdem > 0)
+                if (fdem > 0) {
                     item.getForecastDemandMap().put(dueDateIndex, fdem);
+                }
             }
 
             // Read the transit information and merge into plants and item
@@ -479,11 +479,21 @@ public class Environment {
             for (Item item : itemMap.values()) {
                 Map<Plant, Production> productionMap = item.getProductionMap();
 
+                List<Plant> toRemove = new ArrayList<>();
                 for (Production production : productionMap.values()) {
-                    if (production.getItem().getMachineMap().isEmpty()) {
-                        productionMap.remove(production.getPlant());
+                    Plant plant = production.getPlant();
+
+                    if (item.getMachineMap().isEmpty()) {
+                        toRemove.add(plant);
+                    } else {
+                        List<MachineSet> machineSets = item.getMachineMap().get(plant);
+                        if (machineSets == null || machineSets.isEmpty())
+                            toRemove.add(plant);
                     }
                 }
+
+                for (Plant p : toRemove)
+                    productionMap.remove(p);
             }
 
             // for each production, calculate the rate map
@@ -518,6 +528,9 @@ public class Environment {
                 }
             }
 
+            // calculate the dependent items
+//            environment.calcDependentItems();
+
             // Closing the workbook
             wb.close();
         } catch(Exception ioe) {
@@ -525,6 +538,68 @@ public class Environment {
         }
 
         return environment;
+    }
+
+    /**
+     * Calculate the dependent items for each item.
+     */
+    public void calcDependentItems() {
+        for (Item item : itemMap.values()) {
+            item.calcBomItems();
+            item.calcSharedMachineSets();
+        }
+
+        // group the dependent items into groups
+        DisjointSets<Item> groups = new DisjointSets<>(itemMap.values()); // the groups are disjoint sets
+
+        for (Item item : itemMap.values()) {
+            // merge all the bom items into the same group
+            for (Item bomItem : item.getBomItems()) {
+                groups.union(item, bomItem);
+            }
+        }
+
+        boolean union = true;
+        while(union) {
+            union = false;
+
+            for (Item item1 : itemMap.values()) {
+                for (Item item2 : itemMap.values()) {
+                    if (item1.equals(item2))
+                        continue;
+
+                    if (groups.disjoint(item1, item2)) {
+                        union = true;
+                        groups.union(item1, item2);
+                    }
+                }
+            }
+        }
+
+        System.out.println("debug");
+    }
+
+    /**
+     * Whether two items share the machine set or not?
+     * @param item1 the item1.
+     * @param item2 the item2.
+     * @return true if they share the machine set, and false otherwise.
+     */
+    public boolean shareMachineSet(Item item1, Item item2) {
+        Set<MachineSet> set1 = item1.getSharedMachineSets();
+        Set<MachineSet> set2 = item2.getSharedMachineSets();
+
+        for (MachineSet m1 : set1) {
+            if (set2.contains(m1))
+                return true;
+        }
+
+        for (MachineSet m2 : set2) {
+            if (set1.contains(m2))
+                return true;
+        }
+
+        return false;
     }
 
     public static void main(String[] args) {
