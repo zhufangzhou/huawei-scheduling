@@ -18,7 +18,7 @@ import ec.*;
 /**
  * MuPlusLambdaBreeder is a subclass of MuCommaLambdaBreeder which, together with
  * ESSelection, implements the (mu + lambda) breeding strategy and gathers
- * the comparison data you can use to implement a 1/5-rule mutation mechanism.
+ * the comparison data you can use to implement a 1/5-priorityRule mutation mechanism.
  * Note that MuPlusLambdaBreeder increases subpopulation sizes by their mu
  * values in the second generation and keep them at that size thereafter.
  * See MuCommaLambdaBreeder for information about how to set mu and lambda.

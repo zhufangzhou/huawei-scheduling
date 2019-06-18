@@ -71,7 +71,7 @@ import java.io.*;
  <font size=-1>int >= 1</font></td>
  <td valign=top>(number of rulesets used)</td></tr>
  <tr><td valign=top><i>base</i>.<tt>ruleset</tt>.<i>n</i><br>
- <font size=-1>Classname, subclass of or = ec.rule.RuleSet</font></td>
+ <font size=-1>Classname, subclass of or = ec.priorityRule.RuleSet</font></td>
  <td valign=top>(class of ruleset <i>n</i>)</td></tr>
  </table>
  
@@ -82,7 +82,7 @@ import java.io.*;
  </table>
 
  <p><b>Default Base</b><br>
- rule.individual
+ priorityRule.individual
 
  * @author Sean Luke
  * @version 1.0 

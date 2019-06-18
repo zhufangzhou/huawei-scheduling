@@ -30,9 +30,9 @@ import ec.EvolutionState;
  
     <p><b>Parameter bases</b><br>
     <table>
-    <tr><td valign=top><tt>rule.rsc</tt></td>
+    <tr><td valign=top><tt>priorityRule.rsc</tt></td>
     <td>RuleSetConstraints</td></tr>
-    <tr><td valign=top><tt>rule.rc</tt></td>
+    <tr><td valign=top><tt>priorityRule.rc</tt></td>
     <td>RuleConstraints</td></tr>
     </table>
 */
@@ -84,12 +84,12 @@ public class RuleInitializer extends SimpleInitializer
     public void setupConstraints(final EvolutionState state,
         final Parameter base)
         {
-        state.output.message("Processing Rule Constraints");
+        state.output.message("Processing PriorityRule Constraints");
         
         // How many RuleConstraints do we have?
         int x = state.parameters.getInt(base.push(P_SIZE),null,1);
         if (x<=0) 
-            state.output.fatal("The number of rule constraints must be at least 1.",base.push(P_SIZE));
+            state.output.fatal("The number of priorityRule constraints must be at least 1.",base.push(P_SIZE));
         
         // Load our constraints
         for (int y=0;y<x;y++)
@@ -101,7 +101,7 @@ public class RuleInitializer extends SimpleInitializer
                         base.push(""+y),null,RuleConstraints.class));
             else
                 {
-                state.output.message("No Rule Constraints specified, assuming the default class: ec.rule.RuleConstraints for " + base.push(""+y));
+                state.output.message("No PriorityRule Constraints specified, assuming the default class: ec.priorityRule.RuleConstraints for " + base.push(""+y));
                 c = new RuleConstraints();
                 }
             c.setup(state,base.push(""+y));

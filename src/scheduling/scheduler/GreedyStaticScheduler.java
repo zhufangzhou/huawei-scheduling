@@ -3,15 +3,22 @@ package scheduling.scheduler;
 import org.apache.commons.math3.util.Pair;
 import scheduling.core.Schedule;
 import scheduling.core.SupplyChain;
-import scheduling.core.input.Item;
-import scheduling.core.input.Plant;
-import scheduling.core.input.Production;
+import scheduling.core.input.*;
 import scheduling.core.output.SupplyInstruction;
+import scheduling.simulation.PriorityRule;
 import scheduling.simulation.State;
+import scheduling.simulation.TieBreaker;
+import scheduling.simulation.rule.ShortestChainFirst;
+import scheduling.simulation.rule.UrgentDemandFirst;
+import scheduling.simulation.tiebreaker.SimpleTieBreaker;
 
 import java.util.*;
 
 public class GreedyStaticScheduler extends Scheduler {
+    private PriorityRule<SupplyChain> chainRule = new ShortestChainFirst();
+    private TieBreaker<SupplyChain> chainTB = new SimpleTieBreaker<>();
+    private Comparator<Demand> demandRanker = new UrgentDemandFirst();
+
     public GreedyStaticScheduler() {
     }
 
@@ -19,35 +26,64 @@ public class GreedyStaticScheduler extends Scheduler {
     public void planSchedule(State state) {
         Schedule schedule = state.getPlannedSchedule();
 
-        for (int dateId = 0; dateId < state.getEnv().getPeriod(); dateId++) {
-            Map<Item, Long> dailyAccOrderDem = schedule.getAccOrderDemMap().get(dateId);
+        // generate the list of all demands
+        List<Demand> demands = new ArrayList<>();
+        for (Item item : state.getEnv().getItemMap().values()) {
+            for (int dateId : item.getOrderDemandMap().keySet()) {
+                Demand od = new OrderDemand(dateId, item, item.getOrderDemandMap().get(dateId));
+                demands.add(od);
+            }
 
-            for (Item item : dailyAccOrderDem.keySet()) {
-                long left = dailyAccOrderDem.get(item);
-                while (left > 0) {
-                    SupplyChain nextChain = nextSupplyChain(dateId, item, schedule, state);
+            TreeMap<Integer, Demand> fdMap = new TreeMap<>();
+            for (int dateId : item.getForecastDemandMap().keySet()) {
+                Demand fd = new ForecastDemand(dateId, item, item.getForecastDemandMap().get(dateId));
+                demands.add(fd);
+            }
+        }
 
-                    if (nextChain == null)
-                        break;
+        Collections.sort(demands, demandRanker);
 
-                    if (nextChain.getLength() > 1)
-                        System.out.println("debug");
+        for (Demand dem : demands) {
+            supplyDemand(dem, schedule, state, chainRule, chainTB);
+        }
 
-                    long suppQuantity = nextChain.getMaxQuantity();
-                    if (suppQuantity > left)
-                        suppQuantity = left;
-
-//                    System.out.println(nextChain.toString() + ": " + suppQuantity + "/" + left);
-
-                    nextChain.addToSchedule(dateId, suppQuantity, schedule);
-                    // supply the order demand
-                    Pair<Item, Plant> supply = new Pair<>(item, nextChain.getPlant());
-                    schedule.addOrderSupply(dateId, supply, suppQuantity);
-
-                    left -= suppQuantity;
+        for (int d = schedule.getStartDateId(); d < schedule.getEndDateId(); d++) {
+            for (SupplyInstruction supplyInstruction : schedule.getSupplySchedule().get(d).values()) {
+                if (supplyInstruction.getQuantity() <= 0) {
+                    System.out.println("negative supply!");
                 }
             }
         }
+
+//        for (int dateId = 0; dateId < state.getEnv().getPeriod(); dateId++) {
+//            Map<Item, Long> dailyAccOrderDem = schedule.getAccOrderDemMap().get(dateId);
+//
+//            for (Item item : dailyAccOrderDem.keySet()) {
+//                long left = dailyAccOrderDem.get(item);
+//                while (left > 0) {
+//                    SupplyChain nextChain = nextSupplyChain(dateId, item, schedule, state, chainRule, chainTB);
+//
+//                    if (nextChain == null)
+//                        break;
+//
+//                    if (nextChain.getLength() > 1)
+//                        System.out.println("debug");
+//
+//                    long suppQuantity = nextChain.getMaxQuantity();
+//                    if (suppQuantity > left)
+//                        suppQuantity = left;
+//
+////                    System.out.println(nextChain.toString() + ": " + suppQuantity + "/" + left);
+//
+//                    nextChain.addToSchedule(dateId, suppQuantity, schedule);
+//                    // supply the order demand
+//                    Pair<Item, Plant> supply = new Pair<>(item, nextChain.getPlant());
+//                    schedule.addOrderSupply(dateId, supply, suppQuantity);
+//
+//                    left -= suppQuantity;
+//                }
+//            }
+//        }
 
 //        for (int d = schedule.getStartDateId(); d < schedule.getEndDateId(); d++) {
 //            for (SupplyInstruction supplyInstruction : schedule.getSupplySchedule().get(d).values()) {
@@ -172,4 +208,60 @@ public class GreedyStaticScheduler extends Scheduler {
 //            }
 //        }
     }
+
+//    public List<Demand> calcDemandPool(Schedule schedule, State state) {
+//        List<Demand> demPool = new LinkedList<>();
+//        for (Item item : schedule.getRemOrderDemMap().keySet()) {
+//            TreeMap<Integer, Demand> odMap = schedule.getRemOrderDemMap().get(item);
+//            int odDate1 = odMap.firstKey();
+//            Demand od = odMap.get(odDate1);
+//            demPool.add(od);
+//        }
+//
+//        for (Item item : schedule.getRemForcastDemMap().keySet()) {
+//            TreeMap<Integer, Demand> fdMap = schedule.getRemForcastDemMap().get(item);
+//            int fdDate1 = fdMap.firstKey();
+//            Demand fd = fdMap.get(fdDate1);
+//            demPool.add(fd);
+//        }
+//
+//        // calculate the next supply chains for each demand in the pool
+//        Map<Item, Map<Integer, SupplyChain>> nextChainMap = new HashMap<>();
+//        List<Demand> giveup = new LinkedList<>();
+//        for (Demand dem : demPool) {
+//            int dateId = dem.getDateId();
+//            Item item = dem.getItem();
+//
+//            Map<Integer, SupplyChain> map = new HashMap<>();
+//
+//            if (nextChainMap.containsKey(item))
+//                map = nextChainMap.get(item);
+//
+//            if (map.containsKey(dateId))
+//                continue;
+//
+//            SupplyChain nextChain = nextSupplyChain(dateId, item, schedule, state, priorityRule1, tieBreaker1);
+//
+//            // remove this demand if no next chain can be found
+//            if (nextChain == null) {
+//                giveup.add(dem);
+//                continue;
+//            }
+//
+//            map.put(dateId, nextChain);
+//            nextChainMap.put(item, map);
+//        }
+//
+//        demPool.removeAll(giveup);
+//
+//        for (Demand dem : demPool) {
+//            int dateId = dem.getDateId();
+//            Item item = dem.getItem();
+//            SupplyChain nextChain = nextChainMap.get(item).get(dateId);
+//
+//            dem.setSupplyChain(nextChain);
+//        }
+//
+//        return demPool;
+//    }
 }

@@ -2,7 +2,7 @@ package scheduling.simulation;
 
 import java.util.List;
 
-public class DecisionSituation <T> {
+public class DecisionSituation<T> {
     protected List<T> pool;
     protected State state;
 

@@ -26,6 +26,9 @@ public class Item implements Comparable<Item> {
 
     private int minProductionLeadTime;
     private Set<Plant> plants; // the plants that can hold the item
+    private Set<Item> bomItems; // all the possible items required in its bom
+    private Set<MachineSet> sharedMachineSets; // all the machine sets may be occupied to provide the item
+    private Set<Item> dependentItems; // all the dependent items
 
     public Item(String id, ItemType type, double materialCost, ProductCategory productCategory, double holdingCost) {
         this.id = id;
@@ -44,6 +47,11 @@ public class Item implements Comparable<Item> {
         forecastDemandMap = new HashMap<>();
         initInventoryMap = new HashMap<>();
         frozenProductionMap = new HashMap<>();
+
+        plants = new HashSet<>();
+        bomItems = new HashSet<>();
+        sharedMachineSets = new HashSet<>();
+        dependentItems = new HashSet<>();
     }
 
     public String getId() {
@@ -130,6 +138,30 @@ public class Item implements Comparable<Item> {
         this.plants = plants;
     }
 
+    public Set<Item> getBomItems() {
+        return bomItems;
+    }
+
+    public void setBomItems(Set<Item> bomItems) {
+        this.bomItems = bomItems;
+    }
+
+    public Set<MachineSet> getSharedMachineSets() {
+        return sharedMachineSets;
+    }
+
+    public void setSharedMachineSets(Set<MachineSet> sharedMachineSets) {
+        this.sharedMachineSets = sharedMachineSets;
+    }
+
+    public Set<Item> getDependentItems() {
+        return dependentItems;
+    }
+
+    public void setDependentItems(Set<Item> dependentItems) {
+        this.dependentItems = dependentItems;
+    }
+
     public void addProportionConstraint(ProportionConstraint proportionConstraint) {
         proportionConstraints.add(proportionConstraint);
     }
@@ -153,8 +185,6 @@ public class Item implements Comparable<Item> {
      * Calculate the plants that can hold the item.
      */
     public void calcPlants() {
-        plants = new HashSet<>();
-
         // where it is initially
         plants.addAll(initInventoryMap.keySet());
 
@@ -166,6 +196,43 @@ public class Item implements Comparable<Item> {
         for (Transit transit : transitMap.values()) {
             plants.add(transit.getFromPlant());
             plants.add(transit.getToPlant());
+        }
+    }
+
+    /**
+     * Calculate the bom items.
+     */
+    public void calcBomItems() {
+        for (Production production : productionMap.values()) {
+            for (BomComponent component : production.getBom()) {
+                Item compItem = component.getMaterial();
+                compItem.calcBomItems();
+
+                bomItems.addAll(compItem.getBomItems());
+                bomItems.add(compItem);
+            }
+        }
+    }
+
+    /**
+     * Calculate the shared machine sets.
+     */
+    public void calcSharedMachineSets() {
+        for (List<MachineSet> machineSets : machineMap.values()) {
+            for (MachineSet machineSet : machineSets) {
+                if (rateMap.get(machineSet.getCapacityType()) > 0) {
+                    sharedMachineSets.add(machineSet);
+                }
+            }
+        }
+
+        for (Production production : productionMap.values()) {
+            for (BomComponent component : production.getBom()) {
+                Item compItem = component.getMaterial();
+                compItem.calcSharedMachineSets();
+
+                sharedMachineSets.addAll(compItem.getSharedMachineSets());
+            }
         }
     }
 

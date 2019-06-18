@@ -280,7 +280,7 @@ public class MultiObjectiveFitness extends Fitness
 
     /**
      * Returns true if I'm equivalent in fitness (neither better nor worse) to
-     * _fitness. The rule I'm using is this: If one of us is better in one or
+     * _fitness. The priorityRule I'm using is this: If one of us is better in one or
      * more criteria, and we are equal in the others, then equivalentTo is
      * false. If each of us is better in one or more criteria each, or we are
      * equal in all criteria, then equivalentTo is true.   Multiobjective optimization algorithms may
@@ -328,7 +328,7 @@ public class MultiObjectiveFitness extends Fitness
         }
 
     /**
-     * Returns true if I'm better than _fitness. The DEFAULT rule I'm using is this: if
+     * Returns true if I'm better than _fitness. The DEFAULT priorityRule I'm using is this: if
      * I am better in one or more criteria, and we are equal in the others, then
      * betterThan is true, else it is false. Multiobjective optimization algorithms may
      * choose to override this to do something else.
@@ -340,7 +340,7 @@ public class MultiObjectiveFitness extends Fitness
         }
 
     /**
-     * Returns true if I'm better than _fitness. The rule I'm using is this: if
+     * Returns true if I'm better than _fitness. The priorityRule I'm using is this: if
      * I am better in one or more criteria, and we are equal in the others, then
      * betterThan is true, else it is false.
      */

@@ -34,21 +34,21 @@ import java.io.*;
  * <li><b>writeRuleSet(...,DataOutput)/readRuleSet(...,DataInput)</b>&nbsp;&nbsp;&nbsp;This method
  * transmits or receives a RuleSet in binary.  It is the most efficient approach to sending
  * RuleSets over networks, etc.  The default versions of writeRuleSet/readRuleSet reads/writes out the number
- * of rules, then calls read/writeRule(...) on each Rule.  Override this if you need more functionality.
+ * of rules, then calls read/writeRule(...) on each PriorityRule.  Override this if you need more functionality.
  *
  * <li><b>printRuleSet(...,PrintWriter)/readRuleSet(...,LineNumberReader)</b>&nbsp;&nbsp;&nbsp;This
  * approach transmits or receives a RuleSet in text encoded such that the RuleSet is largely readable
  * by humans but can be read back in 100% by ECJ as well.  To do this, these methods will typically encode numbers
  * using the <tt>ec.util.Code</tt> class.  These methods are mostly used to write out populations to
  * files for inspection, slight modification, then reading back in later on.  <b>readRuleSet</b>
- * reads in the number of rules, then calls readRule(...) on each new Rule.  <b>printRuleSet</b> writes
- * out the number of rules, then calls printrule(...) on each new Rule.  Again, override this if you need more
+ * reads in the number of rules, then calls readRule(...) on each new PriorityRule.  <b>printRuleSet</b> writes
+ * out the number of rules, then calls printrule(...) on each new PriorityRule.  Again, override this if you need more
  * functionality.
  * 
  * <li><b>printRuleSetForHumans(...,PrintWriter)</b>&nbsp;&nbsp;&nbsp;This
  * approach prints a RuleSet in a fashion intended for human consumption only.
  * <b>printRuleSetForHumans</b> prints out the number of rules, then calles <b>printRuleForHumans</b>
- * on each Rule in turn.  You may wish to override this to provide more information instead. 
+ * on each PriorityRule in turn.  You may wish to override this to provide more information instead.
  * You should handle one of these methods properly
  * to ensure RuleSets can be printed by ECJ.
  * </ul>
@@ -57,11 +57,11 @@ import java.io.*;
  <table>
  <tr><td valign=top><i>base</i>.<tt>constraints</tt><br>
  <font size=-1>string</font></td>
- <td valign=top>(name of the rule set constraints)</td></tr>
+ <td valign=top>(name of the priorityRule set constraints)</td></tr>
  </table>
  
  <p><b>Default Base</b><br>
- rule.ruleset
+ priorityRule.ruleset
 
 
  * @author Liviu Panait and Sean Luke
@@ -71,12 +71,12 @@ public class RuleSet implements Prototype
     {
 
     /**
-       The message to appear when printing the rule set
+       The message to appear when printing the priorityRule set
     */
     public final static String N_RULES = "Num: ";
     public final static String P_RULESET = "ruleset";
     /**
-       The constraint for the rule set
+       The constraint for the priorityRule set
     */
     public static final String P_CONSTRAINTS = "constraints";
     /**
@@ -91,7 +91,7 @@ public class RuleSet implements Prototype
         }
 
     /**
-       The rules in the rule set
+       The rules in the priorityRule set
     */
     public Rule[] rules = new Rule[0];
     /**
@@ -189,8 +189,8 @@ public class RuleSet implements Prototype
         }
         
     /**
-       Randomizes the order of the rules in the rule set. It is helpful when the
-       order of rule is important for the conflict resolution.
+       Randomizes the order of the rules in the priorityRule set. It is helpful when the
+       order of priorityRule is important for the conflict resolution.
     */
     public void randomizeRulesOrder(final EvolutionState state, final int thread)
         {
@@ -205,7 +205,7 @@ public class RuleSet implements Prototype
         }
 
     /**
-       Add a random rule to the rule set
+       Add a random priorityRule to the priorityRule set
     */
     public void addRandomRule(final EvolutionState state, final int thread)
         {
@@ -215,7 +215,7 @@ public class RuleSet implements Prototype
         }
 
     /**
-       Add a rule directly to the rule set.  Does not copy the rule.
+       Add a priorityRule directly to the priorityRule set.  Does not copy the priorityRule.
     */
     public void addRule( Rule rule )
         {
@@ -235,24 +235,24 @@ public class RuleSet implements Prototype
             rules = tempRules;
             }
 
-        // add the rule and increase the counter
+        // add the priorityRule and increase the counter
         rules[ numRules++ ] = rule;
         }
 
     /**
-       Removes a rule from the rule set and returns it.  If index is out of bounds, then
+       Removes a priorityRule from the priorityRule set and returns it.  If index is out of bounds, then
        this method returns null.  The rules are shifted down --- thus this is O(n).
     */
     public Rule removeRule( int index )
         {
         if (index >= numRules || index < 0 ) return null;
         Rule myrule = rules[index];
-        if (index < numRules - 1)   // if we've chosen to remove the last rule, leave it where it is
+        if (index < numRules - 1)   // if we've chosen to remove the last priorityRule, leave it where it is
             System.arraycopy(rules, index+1, rules, index, numRules - (index +1));
                 
         /*
         // swap to the top
-        Rule myrule = rules[index];
+        PriorityRule myrule = rules[index];
         rules[index] = rules[numRules-1];
         */
 
@@ -261,7 +261,7 @@ public class RuleSet implements Prototype
         }
 
     /**
-       Removes a randomly-chosen rule from the rule set and returns it.  If there are no rules to remove,
+       Removes a randomly-chosen priorityRule from the priorityRule set and returns it.  If there are no rules to remove,
        this method returns null.
     */
     public Rule removeRandomRule( final EvolutionState state, final int thread )
@@ -271,7 +271,7 @@ public class RuleSet implements Prototype
         }
 
     /**
-       Makes a copy of the rules in another RuleSet and adds the rule copies.
+       Makes a copy of the rules in another RuleSet and adds the priorityRule copies.
     */
     public void join( final RuleSet other )
         {
@@ -308,7 +308,7 @@ public class RuleSet implements Prototype
         }
         
     /**
-       Splits the rule set into n pieces, according to points, which *must* be sorted.
+       Splits the priorityRule set into n pieces, according to points, which *must* be sorted.
        The rules in each piece are cloned and added to the equivalent set.  Sets must be already allocated.
        sets.length must be 1+ points.length.  
        Comment: This function appends the split rulesets to the existing rulesets already in <i>sets</i>.
@@ -334,8 +334,8 @@ public class RuleSet implements Prototype
         }
     
     /**
-       Splits the rule set into a number of disjoint rule sets, copying the rules and adding
-       them to the sets as appropriate.  Each rule independently
+       Splits the priorityRule set into a number of disjoint priorityRule sets, copying the rules and adding
+       them to the sets as appropriate.  Each priorityRule independently
        throws a die to determine which ruleset it will go into.  Sets must be already allocated.
        Comment: This function appends the split rulesets to the existing rulesets already in <i>sets</i>.
     */
@@ -348,7 +348,7 @@ public class RuleSet implements Prototype
         }
     
     /**
-       Splits the rule set into a two disjoint rule sets, copying the rules and adding
+       Splits the priorityRule set into a two disjoint priorityRule sets, copying the rules and adding
        them to the sets as appropriate.  The value <i>prob</i> is the probability that an element will
        land in the first set.  Sets must be already allocated.
        Comment: This function appends the split rulesets to the existing rulesets already in <i>sets</i>.
@@ -364,7 +364,7 @@ public class RuleSet implements Prototype
         }
     
     /**
-       Prints out the rule set in a readable fashion.
+       Prints out the priorityRule set in a readable fashion.
     */
     public void printRuleSetForHumans(final EvolutionState state, final int log)
         {
@@ -372,7 +372,7 @@ public class RuleSet implements Prototype
         }
                 
     /**
-       Prints out the rule set in a readable fashion.
+       Prints out the priorityRule set in a readable fashion.
        @deprecated Verbosity no longer has an effect
     */
     public void printRuleSetForHumans(final EvolutionState state, final int log,
@@ -382,13 +382,13 @@ public class RuleSet implements Prototype
             log );
         for( int i = 0 ; i < numRules ; i ++ )
             {
-            state.output.println( "Rule " + i + ":", log );
+            state.output.println( "PriorityRule " + i + ":", log );
             rules[i].printRuleForHumans( state, log );
             }
         }
 
     /**
-       Prints the rule set such that the computer can read it later
+       Prints the priorityRule set such that the computer can read it later
     */
     public void printRuleSet(final EvolutionState state, final int log)
         {
@@ -396,7 +396,7 @@ public class RuleSet implements Prototype
         }
                 
     /**
-       Prints the rule set such that the computer can read it later
+       Prints the priorityRule set such that the computer can read it later
        @deprecated Verbosity no longer has an effect
     */
     public void printRuleSet(final EvolutionState state,
@@ -408,7 +408,7 @@ public class RuleSet implements Prototype
         }
 
     /**
-       Prints the rule set such that the computer can read it later
+       Prints the priorityRule set such that the computer can read it later
     */
     public void printRuleSet(final EvolutionState state,
         final PrintWriter writer)
@@ -419,7 +419,7 @@ public class RuleSet implements Prototype
         }
 
     /**
-       Reads the rule set
+       Reads the priorityRule set
     */
     public void readRuleSet(final EvolutionState state,
         final LineNumberReader reader)
@@ -477,7 +477,7 @@ public class RuleSet implements Prototype
         }
 
     /**
-       The hash code for the rule set.  This isn't a very good hash code,
+       The hash code for the priorityRule set.  This isn't a very good hash code,
        but it has the benefit of not being O(n lg n) -- otherwise, we'd have
        to do something like sort the rules in the individual first and then
        do an ordered hash code of some sort, ick.
@@ -504,7 +504,7 @@ public class RuleSet implements Prototype
             return true;  // quick and dirty
             
         // we need to sort the rulesets.  First, let's clone
-        // the rule arrays
+        // the priorityRule arrays
 
         Rule[] srules = (Rule[])(rules.clone());
         Rule[] orules = (Rule[])(other.rules.clone());

@@ -1,48 +1,85 @@
 package scheduling.core.input;
 
+import org.apache.commons.math3.util.Pair;
+import scheduling.core.Schedule;
+import scheduling.core.SupplyChain;
+
 /**
- * A demand includes an ordered demand and a forecast demand.
+ * A demand includes
+ *   - the requested date id
+ *   - the requested item
+ *   - the quantity requested
  */
 
-public class Demand {
-    private long orderDemand;
-    private long forecastDemand;
-    private long delayed;
+public abstract class Demand implements Comparable<Demand> {
+    protected int dateId;
+    protected Item item;
+    protected long quantity;
 
-    public Demand(long orderDemand, long forecastDemand, long delayed) {
-        this.orderDemand = orderDemand;
-        this.forecastDemand = forecastDemand;
-        this.delayed = delayed;
+    protected double priority;
+
+    public Demand(int dateId, Item item, long quantity) {
+        this.dateId = dateId;
+        this.item = item;
+        this.quantity = quantity;
     }
 
-    public Demand(long orderDemand, long forecastDemand) {
-        this.orderDemand = orderDemand;
-        this.forecastDemand = forecastDemand;
-        this.delayed = orderDemand;
+    public int getDateId() {
+        return dateId;
     }
 
-    public long getOrderDemand() {
-        return orderDemand;
+    public void setDateId(int dateId) {
+        this.dateId = dateId;
     }
 
-    public long getForecastDemand() {
-        return forecastDemand;
+    public Item getItem() {
+        return item;
     }
 
-    public void setOrderDemand(long orderDemand) {
-        this.orderDemand = orderDemand;
+    public void setItem(Item item) {
+        this.item = item;
     }
 
-    public void setForecastDemand(long forecastDemand) {
-        this.forecastDemand = forecastDemand;
+    public long getQuantity() {
+        return quantity;
     }
 
-    public void setDelayed(long delayed) {
-        this.delayed = delayed;
+    public void setQuantity(long quantity) {
+        this.quantity = quantity;
     }
+
+    public void addQuantity(long quantity) {
+        this.quantity += quantity;
+    }
+
+    public void removeQuantity(long quantity) {
+        this.quantity -= quantity;
+    }
+
+    public double getPriority() {
+        return priority;
+    }
+
+    public void setPriority(double priority) {
+        this.priority = priority;
+    }
+
+    public abstract void supplied(SupplyChain supplyChain, long suppQuantity, Schedule schedule);
 
     @Override
     public String toString() {
-        return "[" + orderDemand + ", " + forecastDemand + "]";
+        return "[" + dateId + ", " + item.toString() + ", " + quantity + "]";
+    }
+
+    @Override
+    public int compareTo(Demand o) {
+        // compare the requested date id
+        if (dateId < o.dateId)
+            return -1;
+
+        if (dateId > o.dateId)
+            return 1;
+
+        return item.compareTo(o.item);
     }
 }

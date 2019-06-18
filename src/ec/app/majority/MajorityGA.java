@@ -14,13 +14,13 @@ import ec.vector.*;
 /**
    MajorityGA.java
         
-   Implements a GA-style vector rule for the one-dimensional Majority-Ones cellular automaton problem.
+   Implements a GA-style vector priorityRule for the one-dimensional Majority-Ones cellular automaton problem.
    This code is in the spirit of Das, Crutchfield, Mitchel, and Hanson, "Evolving Globally Synchronized Cellular Automata",
    http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.55.7754&rep=rep1&type=pdf
    
    The primary difference is in the trials mechanism, in which we're using 25/25/50 rather than 50/50/0.
    
-   If you run java ec.app.majority.MajorityGA, it'll demo using the ABK rule instead (0.8342 using 10000 tests,
+   If you run java ec.app.majority.MajorityGA, it'll demo using the ABK priorityRule instead (0.8342 using 10000 tests,
    0.82528 if you use 100000 tests, 0.823961 if you use 1000000 tests)
 */
 
@@ -167,7 +167,7 @@ public class MajorityGA extends Problem implements SimpleProblemForm
             
                 boolean[] genome = ((BitVectorIndividual)ind).genome;
             
-                // extract the rule
+                // extract the priorityRule
                 int[] rule = ca.getRule();
                 for(int i = 0; i < 128; i++)
                     rule[i] = (genome[i] ? 1 : 0);
@@ -208,7 +208,7 @@ public class MajorityGA extends Problem implements SimpleProblemForm
                 
         boolean[] genome = ((BitVectorIndividual)ind).genome;
                 
-        // extract the rule
+        // extract the priorityRule
         int[] rule = ca.getRule();
         for(int i = 0; i < 128; i++)
             rule[i] = (genome[i] ? 1 : 0);
@@ -240,7 +240,7 @@ public class MajorityGA extends Problem implements SimpleProblemForm
 
     public static void main(String[] args)
         {
-        // tests the ABK rule 
+        // tests the ABK priorityRule
         
         int[] ABK = new int[] {
             0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,1,0,0,0,0,0,1,0,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1,1,1
@@ -255,7 +255,7 @@ public class MajorityGA extends Problem implements SimpleProblemForm
         for(int i = 0; i < 128; i++)
             bvi.genome[i] = (ABK[i] == 0 ? false : true);
         ga.evaluate(state, bvi, 0, 0);
-        System.err.println("ABK Rule");
+        System.err.println("ABK PriorityRule");
         ga.describe(state, bvi, 0, 0, 1);
         }
     }

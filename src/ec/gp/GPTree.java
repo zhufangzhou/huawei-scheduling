@@ -100,11 +100,11 @@ import java.io.*;
  <b>% draw with a thick dashed line, very nice looking</b>
  \thicklines \drawwith{\dottedline{2}}   
 
- <b>% draw an oval and center it with the rule.  You may want to fool with the
- % rule values, though these seem to work quite well for me.  If you make the
- % rule smaller than the text height, then the GP nodes may not line up with
+ <b>% draw an oval and center it with the priorityRule.  You may want to fool with the
+ % priorityRule values, though these seem to work quite well for me.  If you make the
+ % priorityRule smaller than the text height, then the GP nodes may not line up with
  % each other horizontally quite right, so watch out.</b>
- \newcommand{\gpbox}[1]{\Ovalbox{#1\rule[-.7ex]{0ex}{2.7ex}}}
+ \newcommand{\gpbox}[1]{\Ovalbox{#1\priorityRule[-.7ex]{0ex}{2.7ex}}}
                 
  <b>% Here's the tree which the GP system spat out</b>
  \begin{bundle}{\gpbox{progn3}}\chunk{\begin{bundle}{\gpbox{if-food-ahead}}

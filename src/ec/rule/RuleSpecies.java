@@ -19,12 +19,12 @@ import java.io.*;
 
 /**
  * RuleSpecies is a simple individual which is suitable as a species
- * for rule sets subpopulations.  RuleSpecies' individuals must be RuleIndividuals,
+ * for priorityRule sets subpopulations.  RuleSpecies' individuals must be RuleIndividuals,
  * and often their pipelines are RuleBreedingPipelines (at any rate,
  * the pipelines will have to return members of RuleSpecies!).
  *
  <p><b>Default Base</b><br>
- rule.species
+ priorityRule.species
 
  *
  * @author Liviu Panait
@@ -46,7 +46,7 @@ public class RuleSpecies extends Species
 
         // check to make sure that our individual prototype is a RuleIndividual
         if (!(i_prototype instanceof RuleIndividual))
-            state.output.fatal("The Individual class for the Species " + getClass().getName() + " is must be a subclass of ec.rule.RuleIndividual.", base );
+            state.output.fatal("The Individual class for the Species " + getClass().getName() + " is must be a subclass of ec.priorityRule.RuleIndividual.", base );
         }    
 
     public Individual newIndividual(EvolutionState state, int thread) 

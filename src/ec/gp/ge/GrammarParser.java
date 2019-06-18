@@ -17,7 +17,7 @@ import ec.util.*;
 /**
  * A GrammarParser is the basic class for parsing a GE ruleset into a parse graph of GrammarNodes.
  * This parse graph is then later used to produce a GPIndividual from a GEIndividual in GESpecies.
- * It is assumed that the root will represent the first rule given in the dagp.
+ * It is assumed that the root will represent the first priorityRule given in the dagp.
  *
  */
 
@@ -45,9 +45,9 @@ public class GrammarParser implements Prototype
     HashMap ruleToIndex = new HashMap();
     // Function heads' (i.e. terminal') indices
     HashMap functionHeadToIndex = new HashMap();
-    // Rule heads' (i.e. non-terminal') indices
+    // PriorityRule heads' (i.e. non-terminal') indices
     HashMap ruleHeadToIndex = new HashMap();
-    // Absolute production rule indices to relative indices (w.r.t. sub-rules)
+    // Absolute production priorityRule indices to relative indices (w.r.t. sub-rules)
     HashMap absIndexToRelIndex = new HashMap();
 
     /** 
@@ -75,13 +75,13 @@ public class GrammarParser implements Prototype
     "\\p{Blank}*#[^\\n\\r]*",               // COMMENT: matches a #foo up to but not including the newline.  Should appear first.
     "\\p{Blank}*\\(",                       // LPAREN: matches a (
     "\\p{Blank}*\\)",                       // RPAREN: matches a )
-    "\\p{Blank}*<[^<>()\\p{Space}]*>",      // RULE: matches a rule of the form <foo>.  No <, >, (, ), |, or spaces may appear in foo
+    "\\p{Blank}*<[^<>()\\p{Space}]*>",      // RULE: matches a priorityRule of the form <foo>.  No <, >, (, ), |, or spaces may appear in foo
     "\\p{Blank}*[|]",                       // PIPE: matches a |
     "\\p{Blank}*::=",                       // EQUALS: matches a :==
     "\\p{Blank}*::=",                       // NUMERIC_CONSTANT: does nothing right now, so set to be identical to EQUALS.  Reserved for future use.
     "\\p{Blank}*::=",                       // BOOLEAN_CONSTANT: does nothing right now, so set to be identical to EQUALS.  Reserved for future use.
     "\\p{Blank}*::=",                       // STRING_CONSTANT: does nothing right now, so set to be identical to EQUALS.  Reserved for future use.
-    "\\p{Blank}*[^<>()|\\p{Space}]+",       // FUNCTION (must appear after RULE and PIPE): matches a rule of the form foo.  No <, >, (, ), |, or spaces may appear in foo, and foo must have at least one character.
+    "\\p{Blank}*[^<>()|\\p{Space}]+",       // FUNCTION (must appear after RULE and PIPE): matches a priorityRule of the form foo.  No <, >, (, ), |, or spaces may appear in foo, and foo must have at least one character.
     };
 
     protected static final int COMMENT = 0;
@@ -128,7 +128,7 @@ public class GrammarParser implements Prototype
             }
         }
 
-    // Returns a rule from the hashmap.  If one does not exist, creates a rule with the
+    // Returns a priorityRule from the hashmap.  If one does not exist, creates a priorityRule with the
     // given head and stores, then returns that.
     GrammarRuleNode getRule(HashMap rules, String head)
         {
@@ -142,46 +142,46 @@ public class GrammarParser implements Prototype
             }
         }
 
-    // Parses a rule, one rule per line, from the lexer.
-    // Adds to the existing hashmap if there's already a rule there.
+    // Parses a priorityRule, one priorityRule per line, from the lexer.
+    // Adds to the existing hashmap if there's already a priorityRule there.
     GrammarRuleNode parseRule(EvolutionState state, Lexer lexer, GPFunctionSet gpfs)
         {
         GrammarRuleNode retResult = null;
 
         String token = lexer.nextToken();
         if(lexer.getMatchingIndex() == COMMENT) return null; //ignore the comment
-        if(lexer.getMatchingIndex() == RULE) //rule head, good, as expected...
+        if(lexer.getMatchingIndex() == RULE) //priorityRule head, good, as expected...
             {
             lexer.nextToken();
             if(lexer.getMatchingIndex() != EQUALS)
                 state.output.fatal("GE Grammar Error: " 
-                    + "Expecting equal sign after rule head: " + token);
+                    + "Expecting equal sign after priorityRule head: " + token);
             retResult = getRule(rules, token);
             parseProductions(state, retResult, lexer, gpfs);
             }
         else
             {
             state.output.fatal("GE Grammar Error - Unexpected token:" 
-                + " Expecting rule head.: " + token);
+                + " Expecting priorityRule head.: " + token);
             }
         return retResult;
         // IMPLEMENTED
-        // Need to parse the rule using a recursive descent parser
+        // Need to parse the priorityRule using a recursive descent parser
         // If there was an error, then try to call state.output.error(...).
         //
-        // Don't merge into any existing rule -- I do that in parseRules below.  Instead, just pull out
-        // rules and hang them into your "new rule" as necessary.
-        // Use getRule(rules, "<rulename>") to extract the rule representing the current rule name which you
+        // Don't merge into any existing priorityRule -- I do that in parseRules below.  Instead, just pull out
+        // rules and hang them into your "new priorityRule" as necessary.
+        // Use getPriorityRule(rules, "<rulename>") to extract the priorityRule representing the current priorityRule name which you
         // can hang inside there as necessary.
         //
         // If you have to you can call state.output.fatal(...) which will terminate the program,
         // but piling up some errors might be useful.  I'll handle the exitIfErors() in parseRules below
         //
-        // Return null if there was no rule to parse (blank line or all comments) but no errors.
+        // Return null if there was no priorityRule to parse (blank line or all comments) but no errors.
         // Also return null if you called state.output.error(...).
         }
 
-    // Parses each of a rule's production choices.
+    // Parses each of a priorityRule's production choices.
     void parseProductions(EvolutionState state, GrammarRuleNode retResult, 
         Lexer lexer, GPFunctionSet gpfs)
         {
@@ -197,12 +197,12 @@ public class GrammarParser implements Prototype
             else
                 {
                 if(lexer.getMatchingIndex() != LPAREN) //first expect '('
-                    state.output.fatal("GE Grammar Error - Unexpected token for rule: " 
+                    state.output.fatal("GE Grammar Error - Unexpected token for priorityRule: "
                         + retResult.getHead() + "Expecting '('.");
                 token = lexer.nextToken();
                 if(lexer.getMatchingIndex() != FUNCTION) //now expecting function
                     state.output.fatal("GE Grammar Error - Expecting a function name" 
-                        + " after first '(' for rule: " 
+                        + " after first '(' for priorityRule: "
                         + retResult.getHead() + " Error: " + token);
                 else
                     {
@@ -213,9 +213,9 @@ public class GrammarParser implements Prototype
                     token = lexer.nextToken();
                     while(lexer.getMatchingIndex() != RPAREN)
                         {
-                        if(lexer.getMatchingIndex() != RULE) //this better be the name of a rule node
+                        if(lexer.getMatchingIndex() != RULE) //this better be the name of a priorityRule node
                             {
-                            state.output.fatal("GE Grammar Error - Expecting a rule name" 
+                            state.output.fatal("GE Grammar Error - Expecting a priorityRule name"
                                 + " as argument for function definition: " 
                                 + grammarfuncnode.getHead() + " Error on : " + token);
                             }
@@ -275,7 +275,7 @@ public class GrammarParser implements Prototype
             GrammarRuleNode rule = (GrammarRuleNode)(i.next());
             if(rule.getNumChoices() < 1)
                 {
-                System.out.println("Grammar is bad! - Rule not defined: " + rule);
+                System.out.println("Grammar is bad! - PriorityRule not defined: " + rule);
                 isok = false;
                 }
             }
@@ -294,26 +294,26 @@ public class GrammarParser implements Prototype
      * After enumeration, we will have four data-structures like these --
      *
      * (1) productionRuleList (a flattened dagp tree):
-     *      dagp-tree ==> {rule-0, rule-1, ,,, rule-(n-1)}
+     *      dagp-tree ==> {priorityRule-0, priorityRule-1, ,,, priorityRule-(n-1)}
      *
      * (2) ruleToIndex:
-     *      rule-0 --> 0
-     *      rule-1 --> 1
+     *      priorityRule-0 --> 0
+     *      priorityRule-1 --> 1
      *      ,
      *      ,
-     *      rule-(n-1) --> (n-1)
+     *      priorityRule-(n-1) --> (n-1)
      *
      * (3) indexToRule (reverse of ruleToIndex):
-     *      0 --> rule-0
-     *      1 --> rule-1
+     *      0 --> priorityRule-0
+     *      1 --> priorityRule-1
      *      ,
      *      ,
-     *      n-1 --> rule-(n-1)
+     *      n-1 --> priorityRule-(n-1)
      *
-     * and then, last but not the least, the relative rule index --
+     * and then, last but not the least, the relative priorityRule index --
      * (4) absIndexToRelIndex: 
      *      if we have two rules like "<A> -> <B> | <C>" and "<C> -> <D> | <E>" then,
-     *              [rule]          [absIndex]      [relIndex] 
+     *              [priorityRule]          [absIndex]      [relIndex]
      *              <A> -> <B> -->  [0]     -->     [0]
      *              <A> -> <C> -->  [1]     -->     [1] 
      *              <C> -> <D> -->  [2]     -->     [0]
@@ -363,16 +363,16 @@ public class GrammarParser implements Prototype
         }
 
     /**
-     * Generate the FIRST-SET for each production rule and store them in the
+     * Generate the FIRST-SET for each production priorityRule and store them in the
      * global hash-table, this runs a DFS on the dagp tree, the returned ArrayList
      * is discarded and the FIRST-SETs are organized in a hash-map called 
      * "ruleToFirstSet" as follows -- 
      *
-     *      rule-0 --> {FIRST-SET-0}
-     *      rule-1 --> {FIRST-SET-1}
+     *      priorityRule-0 --> {FIRST-SET-0}
+     *      priorityRule-1 --> {FIRST-SET-1}
      *      ,
      *      ,
-     *      rule-(n-1) --> {FIRST-SET-(n-1)}
+     *      priorityRule-(n-1) --> {FIRST-SET-(n-1)}
      */
     public ArrayList gatherFirstSets(GrammarNode gn, GrammarNode parent)
         {
@@ -440,7 +440,7 @@ public class GrammarParser implements Prototype
 
     /**
      * Now populate the predictive-parse table, this procedure reads
-     * hash-maps/tables for the dagp-rule indices, PREDICT-SETs etc,
+     * hash-maps/tables for the dagp-priorityRule indices, PREDICT-SETs etc,
      * and assigns the corresponding values in the predictive-parse table. 
      */
     public void populatePredictiveParseTable(GrammarNode gn)

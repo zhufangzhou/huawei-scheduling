@@ -124,7 +124,7 @@ GrammarRuleNode.java
 
 These form the actual objects in the parse graph.  GrammarNode is an abstract superclass.
 GrammarFunctionNode defines functions with arguments (its children).  GrammarRuleNode
-defines rules with rule options (its children).
+defines rules with priorityRule options (its children).
 
 
 GEProblem.java

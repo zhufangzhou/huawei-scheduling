@@ -28,11 +28,11 @@ import ec.util.*;
  <table>
  <tr><td valign=top><i>base</i>.<tt>size</tt><br>
  <font size=-1>int &gt;= 1</font></td>
- <td valign=top>(number of rule constraints)</td></tr>
+ <td valign=top>(number of priorityRule constraints)</td></tr>
 
  <tr><td valign=top><i>base.n</i>.<tt>name</tt><br>
  <font size=-1>String</font></td>
- <td valign=top>(name of rule constraint <i>n</i>)</td></tr>
+ <td valign=top>(name of priorityRule constraint <i>n</i>)</td></tr>
  </table>
 
 */
@@ -48,7 +48,7 @@ public class RuleConstraints implements Clique
     /** The name of the RuleConstraints object */
     public String name;
 
-    /** Converting the rule to a string ( the name ) */
+    /** Converting the priorityRule to a string ( the name ) */
     public String toString() { return name; }
 
 
@@ -57,13 +57,13 @@ public class RuleConstraints implements Clique
         // What's my name?
         name = state.parameters.getString(base.push(P_NAME),null);
         if (name==null)
-            state.output.fatal("No name was given for this Rule Constraints.",
+            state.output.fatal("No name was given for this PriorityRule Constraints.",
                 base.push(P_NAME));
 
         // Register me
         RuleConstraints old_constraints = (RuleConstraints)(((RuleInitializer)state.initializer).ruleConstraintRepository.put(name,this));
         if (old_constraints != null)
-            state.output.fatal("The rule constraints \"" + name + "\" has been defined multiple times.", base.push(P_NAME));
+            state.output.fatal("The priorityRule constraints \"" + name + "\" has been defined multiple times.", base.push(P_NAME));
         }
 
     /** You must guarantee that after calling constraintsFor(...) one or
@@ -74,7 +74,7 @@ public class RuleConstraints implements Clique
         {
         RuleConstraints myConstraints = (RuleConstraints)(((RuleInitializer)state.initializer).ruleConstraintRepository.get(constraintsName));
         if (myConstraints==null)
-            state.output.error("The rule constraints \"" + constraintsName + "\" could not be found.");
+            state.output.error("The priorityRule constraints \"" + constraintsName + "\" could not be found.");
         return myConstraints;
         }
     }

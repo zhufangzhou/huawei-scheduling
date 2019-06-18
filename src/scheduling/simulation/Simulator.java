@@ -1,31 +1,21 @@
 package scheduling.simulation;
 
-import io.ExcelProcessor;
-import org.apache.commons.math3.util.Pair;
-import org.apache.poi.ss.usermodel.DataFormatter;
-import org.apache.poi.xssf.usermodel.XSSFRow;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import scheduling.core.Environment;
-import scheduling.core.input.*;
-import scheduling.core.output.SupplyInstruction;
-import scheduling.simulation.event.*;
 
-import java.io.File;
 import java.util.*;
 
 public class Simulator {
     public static final int MAX_PERIOD = 180; // the maximal scheduling period
 
     protected Environment env;
-    protected Rule rule;
+    protected PriorityRule priorityRule;
     protected State state;
     protected Map<Integer, List<Event>> envUpdateEventMap;
     protected Map<Integer, List<Event>> schedulingEventMap;
 
-//    public Simulator(int startDate, Environment env, Rule rule) {
+//    public Simulator(int startDate, Environment env, PriorityRule priorityRule) {
 //        this.env = env;
-//        this.rule = rule;
+//        this.priorityRule = priorityRule;
 //
 //        state = new State(startDate);
 //        envUpdateEventMap = new HashMap<>();
@@ -45,8 +35,8 @@ public class Simulator {
         return env;
     }
 
-    public Rule getRule() {
-        return rule;
+    public PriorityRule getPriorityRule() {
+        return priorityRule;
     }
 
     public State getState() {
@@ -65,8 +55,8 @@ public class Simulator {
         this.env = env;
     }
 
-    public void setRule(Rule rule) {
-        this.rule = rule;
+    public void setPriorityRule(PriorityRule priorityRule) {
+        this.priorityRule = priorityRule;
     }
 
     public void setState(State state) {
@@ -553,7 +543,7 @@ public class Simulator {
 //    }
 //
 //    public Simulator deepClone() {
-//        Simulator cloned = new Simulator(state.getDate(), env, rule);
+//        Simulator cloned = new Simulator(state.getDate(), env, priorityRule);
 //        cloned.setState(state.deepClone());
 //        cloned.setEnvUpdateEventMap(new HashMap<>(envUpdateEventMap));
 //        cloned.setSchedulingEventMap(new HashMap<>(schedulingEventMap));

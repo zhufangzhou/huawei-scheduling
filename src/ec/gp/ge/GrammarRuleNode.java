@@ -10,8 +10,8 @@ import java.util.*;
  */
 
 /**
- * A GrammarNode representing a Rule in the GE Grammar.  The head of the GrammarRuleNode
- * is the name of the rule; and the children are the various choices.  These are returned
+ * A GrammarNode representing a PriorityRule in the GE Grammar.  The head of the GrammarRuleNode
+ * is the name of the priorityRule; and the children are the various choices.  These are returned
  * by getChoice(...) and getNumChoices().  The merge(...) method unifies this GrammarRuleNode
  * with the choices of another node.
  *

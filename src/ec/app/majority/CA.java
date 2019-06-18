@@ -13,14 +13,14 @@ import ec.*;
    CA.java
         
    Implements a 1-dimensional toroidal CA for purposes of doing the binary majority classification problem.
-   You need to supply the automaton size and the rule neighborhood size at constructor time.
+   You need to supply the automaton size and the priorityRule neighborhood size at constructor time.
    The CA itself consists of an array of integers, each 0 or 1.   You can clear this array, set it to
    preset values, or randomize it.
-   You provide the rule as an array of ints, all 0 or 1 as well.  The rules are specified in the following
+   You provide the priorityRule as an array of ints, all 0 or 1 as well.  The rules are specified in the following
    order.  Let's say that you have a neighborhood of 3, consiting of cells LCR, where L is the cell "left"
    of the target cell (left is less than, right is greater than).  Then the order of the rules are for the
    neighborhoods 0: 000, 1: 001, 2: 010, 3: 011, 4: 100, 5: 101, 6: 110, 7: 111.   In other words, the
-   neighborhood is interpreted as a binary number and that's the index into the rule.
+   neighborhood is interpreted as a binary number and that's the index into the priorityRule.
 */
 
 
@@ -48,7 +48,7 @@ public class CA implements java.io.Serializable
     public void setRule(int[] r)
         {
         if (r.length != rule.length)
-            throw new RuntimeException("Rule length invalid given neighborhood size.");
+            throw new RuntimeException("PriorityRule length invalid given neighborhood size.");
         rule = r;
         } 
 
