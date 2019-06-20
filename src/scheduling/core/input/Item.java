@@ -255,6 +255,7 @@ public class Item implements Comparable<Item> {
             if (rate == 0)
                 continue;
 
+//            System.out.println(machineSet.toString() + ", " + dateId);
             machineSet.getCapacityMap().get(dateId).reduceRemaining(rate*quantity);
         }
     }

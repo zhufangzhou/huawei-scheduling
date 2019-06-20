@@ -529,7 +529,7 @@ public class Environment {
             }
 
             // calculate the dependent items
-//            environment.calcDependentItems();
+            environment.calcDependentItems();
 
             // Closing the workbook
             wb.close();
@@ -576,7 +576,7 @@ public class Environment {
             }
         }
 
-        System.out.println("debug");
+        System.out.println("debug getting dependent items in Environment.java");
     }
 
     /**
