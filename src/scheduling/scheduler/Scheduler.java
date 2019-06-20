@@ -35,21 +35,24 @@ public abstract class Scheduler {
      */
     public void supplyDemand(Demand demand, Schedule schedule, State state,
                              PriorityRule<SupplyChain> chainRule, TieBreaker<SupplyChain> chainTB) {
+//        if (demand.getDateId() == 59 && demand.getItem().toString().equals("243"))
+//            System.out.println("debug Schedule.java");
+
         long left = demand.getQuantity();
         while (left > 0) {
-            SupplyChain nextChain = nextSupplyChain(demand.getDateId(), demand.getItem(), schedule, state, chainRule, chainTB);
+            SupplyChain nextChain = nextSupplyChain(demand.getDateId(), demand.latestSupplyDate(schedule), demand.getItem(), schedule, state, chainRule, chainTB);
 
             if (nextChain == null)
                 break;
 
-            if (nextChain.getLength() > 1)
-                System.out.println("long chain found");
+//            if (nextChain.getLength() > 1)
+//                System.out.println("long chain found");
 
             long suppQuantity = nextChain.getMaxQuantity();
             if (suppQuantity > left)
                 suppQuantity = left;
 
-//                    System.out.println(nextChain.toString() + ": " + suppQuantity + "/" + left);
+//            System.out.println(demand.getDateId() + "; " + nextChain.toString() + ", " + nextChain.getDateId() + ": " + suppQuantity + "/" + left);
 
             nextChain.addToSchedule(nextChain.getDateId(), suppQuantity, schedule);
             demand.supplied(nextChain, suppQuantity, schedule);
@@ -63,27 +66,27 @@ public abstract class Scheduler {
      * Calculate the next supply chain that can supply an item requested at a specific date.
      * The supply chain will be the earliest, and lead to the minimum delay.
      * @param dateId the date id the item is requested.
+     * @param latestDateId the latest date id to provide the item.
      * @param item the item to be provided.
      * @param schedule the schedule.
      * @param state the state.
      * @return the next supply chain.
      */
-    public SupplyChain nextSupplyChain(int dateId, Item item, Schedule schedule, State state,
+    public SupplyChain nextSupplyChain(int dateId, int latestDateId, Item item, Schedule schedule, State state,
                                        PriorityRule<SupplyChain> chainRule, TieBreaker<SupplyChain> chainTB) {
         // reactivate all the chains related to this item
         List<SupplyChain> activeChains = new ArrayList<>();
 
-        for (int d = dateId; d < schedule.getEndDateId(); d++) {
-            // set all the chains of the item to be unvisited
+        for (int d = dateId; d < latestDateId; d++) {
             for (SupplyChain chain : state.getSupplyChainMap().get(item).values()) {
-                chain.setVisited(false);
-            }
-
-            for (SupplyChain chain : state.getSupplyChainMap().get(item).values()) {
-                chain.activateStreams(schedule, dateId);
+                chain.activateStreams(schedule, d, new HashSet<>());
 
                 if (chain.isActive()) {
-                    chain.setDateId(d);
+                    // if zero inventory and no production, then only transit
+                    // skip since we don't need transit as the last step of supply
+                    if (chain.getInventory() == 0 && !chain.isProdActive())
+                        continue;
+
                     activeChains.add(chain);
                 }
             }

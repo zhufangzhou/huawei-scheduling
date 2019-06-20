@@ -4,7 +4,9 @@ import org.apache.commons.math3.util.Pair;
 import scheduling.core.input.*;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * A supply chain is a chain of supplies/productions/transits.
@@ -37,7 +39,6 @@ public class SupplyChain implements Comparable<SupplyChain> {
     protected double totalCost; // the total cost changed by the supply chain
 
     protected int length; // the length of the chain (number of steps)
-    protected boolean visited; // whether it is visited during the activation process
 
     protected double priority;
 
@@ -50,15 +51,9 @@ public class SupplyChain implements Comparable<SupplyChain> {
         // initialise the production stream, if there exists
         bomStreamMap = new HashMap<>();
         production = item.getProductionMap().get(plant);
-        if (production != null) {
-            for (BomComponent component : production.getBom()) {
-                Item material = component.getMaterial();
-                SupplyChain chain = new SupplyChain(material, plant);
-                bomStreamMap.put(component, chain);
-            }
-        }
+        // the bom stream will be linked globally later on
 
-        // the transit stream map will be generated externally
+        // the transit stream map will be linked globally later on
         transitStreamMap = new HashMap<>();
     }
 
@@ -198,14 +193,6 @@ public class SupplyChain implements Comparable<SupplyChain> {
         this.length = length;
     }
 
-    public boolean isVisited() {
-        return visited;
-    }
-
-    public void setVisited(boolean visited) {
-        this.visited = visited;
-    }
-
     public double getPriority() {
         return priority;
     }
@@ -224,12 +211,13 @@ public class SupplyChain implements Comparable<SupplyChain> {
      *
      * @param schedule the schedule.
      * @param dateId the date id.
+     * @param visited the visited supply chains to be skipped.
      */
-    public void activateStreams(Schedule schedule, int dateId) {
-        if (visited)
+    public void activateStreams(Schedule schedule, int dateId, Set<SupplyChain> visited) {
+        if (visited.contains(this))
             return;
 
-        visited = true;
+        visited.add(this);
 
         // reset the activation status
         active = false;
@@ -242,6 +230,7 @@ public class SupplyChain implements Comparable<SupplyChain> {
             // if there is direct supply, then do not consider any other
             // the lead time becomes 0
             active = true;
+            this.dateId = dateId;
             leadTime = 0;
             maxQuantity = inventory;
         } else {
@@ -255,7 +244,7 @@ public class SupplyChain implements Comparable<SupplyChain> {
                     continue;
 
                 SupplyChain chain = transitStreamMap.get(transit);
-                chain.activateStreams(schedule, transitStartTime);
+                chain.activateStreams(schedule, transitStartTime, visited);
 
                 if (chain.getMaxQuantity() == 0) {
                     // if this transit stream cannot provide any, do nothing
@@ -284,7 +273,7 @@ public class SupplyChain implements Comparable<SupplyChain> {
 
                     for (BomComponent component : bomStreamMap.keySet()) {
                         SupplyChain chain = bomStreamMap.get(component);
-                        chain.activateStreams(schedule, prodStartTime);
+                        chain.activateStreams(schedule, prodStartTime, visited);
 
                         long q = chain.getMaxQuantity()/component.getQuantity();
 
@@ -317,6 +306,7 @@ public class SupplyChain implements Comparable<SupplyChain> {
             maxQuantity = 0l;
             if (leadTime < Integer.MAX_VALUE) {
                 active = true;
+                this.dateId = dateId;
 
                 // active all the streams with smallest lead time
                 for (Transit transit : transitStreamMap.keySet()) {
@@ -344,9 +334,9 @@ public class SupplyChain implements Comparable<SupplyChain> {
         }
 
         // calculate the costs based on the active streams
-        calcHoldingCost(schedule, dateId);
-        calcProductionCost();
-        calcTransitCost();
+        calcHoldingCost(schedule, dateId, new HashSet<>());
+        calcProductionCost(new HashSet<>());
+        calcTransitCost(new HashSet<>());
 
         totalCost = holdingCost+productionCost+transitCost;
 
@@ -386,41 +376,56 @@ public class SupplyChain implements Comparable<SupplyChain> {
      * Calculate the holding cost for providing one item by the supply chain.
      * @param schedule the schedule.
      * @param dateId the date id to provide the item.
+     * @param visited the visited supply chains, that can be skipped.
      */
-    public void calcHoldingCost(Schedule schedule, int dateId) {
+    public void calcHoldingCost(Schedule schedule, int dateId, Set<SupplyChain> visited) {
+        if (visited.contains(this))
+            return;
+
+        visited.add(this);
+
         holdingCost = 0d;
 
         if (!active)
             return;
 
         if (inventory > 0) {
-            // decrease the inventory cost of the supplied item
+            // decrease the holding cost of the supplied item
             holdingCost = -item.getHoldingCost()*(schedule.getEndDateId()-dateId);
         }
 
         if (prodActive) {
-            // all the bom component streams are active
             for (BomComponent component : bomStreamMap.keySet()) {
                 SupplyChain chain = bomStreamMap.get(component);
-                chain.calcHoldingCost(schedule, dateId);
-                // the inventory cost changed by supplying the bom component
+                chain.calcHoldingCost(schedule, dateId, visited);
+                // the holding cost changed by supplying the bom component
                 holdingCost += chain.getHoldingCost()*component.getQuantity();
             }
         }
 
         for (SupplyChain chain : transitStreamMap.values()) {
+            // to avoid loop
+            if (chain.length > length)
+                continue;
+
             if (!chain.isActive())
                 continue;
 
-            chain.calcHoldingCost(schedule, dateId);
+            chain.calcHoldingCost(schedule, dateId, visited);
             holdingCost += chain.getHoldingCost();
         }
     }
 
     /**
      * Calculate the production cost to providing one item by this supply chain.
+     * @param visited the visited supply chains to be skipped.
      */
-    public void calcProductionCost() {
+    public void calcProductionCost(Set<SupplyChain> visited) {
+        if (visited.contains(this))
+            return;
+
+        visited.add(this);
+
         productionCost = 0d;
 
         if (!active || !prodActive) {
@@ -432,7 +437,7 @@ public class SupplyChain implements Comparable<SupplyChain> {
 
         for (BomComponent component : bomStreamMap.keySet()) {
             SupplyChain chain = bomStreamMap.get(component);
-            chain.calcProductionCost();
+            chain.calcProductionCost(visited);
 
             productionCost += chain.getProductionCost()*component.getQuantity();
         }
@@ -442,7 +447,12 @@ public class SupplyChain implements Comparable<SupplyChain> {
      * Calculate the transit cost for providing one item by the supply chain.
      * For now, it is simply arbitrarily choosing one source plant to transit in.
      */
-    public void calcTransitCost() {
+    public void calcTransitCost(Set<SupplyChain> visited) {
+        if (visited.contains(this))
+            return;
+
+        visited.add(this);
+
         transitCost = 0d;
 
         if (!active)
@@ -450,9 +460,12 @@ public class SupplyChain implements Comparable<SupplyChain> {
 
         for (Transit transit : transitStreamMap.keySet()) {
             SupplyChain chain = transitStreamMap.get(transit);
-            chain.calcTransitCost();
+
+            if (chain.length > length)
+                continue;
 
             if (chain.isActive()) {
+                chain.calcTransitCost(visited);
                 transitCost = chain.getTransitCost()+transit.getCost();
                 return;
             }
@@ -556,6 +569,9 @@ public class SupplyChain implements Comparable<SupplyChain> {
 
         for (Transit transit : transitStreamMap.keySet()) {
             SupplyChain transitStream = transitStreamMap.get(transit);
+
+            if (transitStream.length > length) // to avoid loop
+                continue;
 
             if (transitStream.isActive()) {
                 cloned.getTransitStreamMap().put(transit, transitStream.cloneActive());

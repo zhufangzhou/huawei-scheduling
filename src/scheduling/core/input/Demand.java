@@ -64,6 +64,21 @@ public abstract class Demand implements Comparable<Demand> {
         this.priority = priority;
     }
 
+    /**
+     * Get the latest supply date (exclusive).
+     * For order demand, it is the last day of the schedule.
+     * For forecast demand, it is only the current day
+     * @param schedule the schedule.
+     * @return the latest supply date
+     */
+    public abstract int latestSupplyDate(Schedule schedule);
+
+    /**
+     * Supply the demand, update the schedule.
+     * @param supplyChain the supply chain to supply the demand.
+     * @param suppQuantity the supplied quantity.
+     * @param schedule the schedule to be updated.
+     */
     public abstract void supplied(SupplyChain supplyChain, long suppQuantity, Schedule schedule);
 
     @Override

@@ -10,6 +10,11 @@ public class OrderDemand extends Demand {
     }
 
     @Override
+    public int latestSupplyDate(Schedule schedule) {
+        return schedule.getEndDateId();
+    }
+
+    @Override
     public void supplied(SupplyChain supplyChain, long suppQuantity, Schedule schedule) {
         int dateId = supplyChain.getDateId();
         Item item = supplyChain.getItem();

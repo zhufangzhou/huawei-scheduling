@@ -170,6 +170,23 @@ public class State {
             supplyChainMap.put(item, map);
         }
 
+        // link the supply chains through bom streams
+        for (Item item : env.getItemMap().values()) {
+            for (Plant plant : item.getPlants()) {
+                SupplyChain targetChain = supplyChainMap.get(item).get(plant);
+
+                Production production = targetChain.getProduction();
+
+                if (production != null) {
+                    for (BomComponent component : production.getBom()) {
+                        Item material = component.getMaterial();
+                        SupplyChain chain = supplyChainMap.get(material).get(plant);
+                        targetChain.getBomStreamMap().put(component, chain);
+                    }
+                }
+            }
+        }
+
         // link the supply chains through transit streams
         for (Item item : env.getItemMap().values()) {
             for (Plant plant : item.getPlants()) {
@@ -195,7 +212,7 @@ public class State {
     }
 
     public static void main(String[] args) {
-        File file = new File("data/e_vuw_test_multi_plant_06.xlsx");
+        File file = new File("data/e_vuw_test_multi_plant_11.xlsx");
 
         State staticProb = State.staticProbFromFile(file);
 
@@ -203,8 +220,13 @@ public class State {
         long start = System.currentTimeMillis();
         scheduler.planSchedule(staticProb);
         long finish = System.currentTimeMillis();
-
         long duration = (finish-start);
+
+        staticProb.getPlannedSchedule().calcFillRate();
+        System.out.println("fill rate = " + staticProb.getPlannedSchedule().getFillRate());
+        System.out.println("holding cost = " + staticProb.getPlannedSchedule().getHoldingCost());
+        System.out.println("production cost = " + staticProb.getPlannedSchedule().getProductionCost());
+        System.out.println("transit cost = " + staticProb.getPlannedSchedule().getTransitCost());
         System.out.println("finished, duration = " + duration);
     }
 }
