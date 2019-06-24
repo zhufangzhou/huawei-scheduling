@@ -8,24 +8,6 @@ import java.io.*;
 
 public class ExcelProcessor {
 
-    public static final int CAPACITY_IDX = 0;
-    public static final int CAPACITY_TYPE_IDX = 1;
-    public static final int PLANT_BOM_IDX = 2;
-    public static final int DEMAND_IDX = 3;
-    public static final int FROZEN_PROD_IDX = 4;
-    public static final int PLANT_IDX = 5;
-    public static final int ITEM_SETS_IDX = 6;
-    public static final int PRODUCT_CATEGORY_IDX = 8;
-    public static final int PRODUCTION_IDX = 9;
-    public static final int ITEM_IDX = 10;
-    public static final int RATE_IDX = 12;
-    public static final int MACHINE_SET_IDX = 13;
-    public static final int TIME_PERIOD_IDX = 15;
-    public static final int TRANSIT_IDX = 17;
-    public static final int WORK_IN_PROCESS_IDX = 18;
-    public static final int RAW_MATERIAL_PO_IDX = 19;
-    public static final int INIT_INVENTORY_IDX = 20;
-
     // sheetName in getSheet method is case insensitive
     public static final String CAPACITY = "Capacity";
     public static final String CAPACITY_TYPE = "Capacity Types";
