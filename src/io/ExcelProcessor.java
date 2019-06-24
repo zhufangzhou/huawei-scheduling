@@ -26,6 +26,26 @@ public class ExcelProcessor {
     public static final int RAW_MATERIAL_PO_IDX = 19;
     public static final int INIT_INVENTORY_IDX = 20;
 
+    // sheetName in getSheet method is case insensitive
+    public static final String CAPACITY = "Capacity";
+    public static final String CAPACITY_TYPE = "Capacity Types";
+    public static final String PLANT_BOM = "Plant Bom";
+    public static final String DEMAND = "Demand";
+    public static final String FROZEN_PROD = "Frozen Production";
+    public static final String PLANT = "Plants";
+    public static final String ITEM_SETS = "Item Sets";
+    public static final String PRODUCT_CATEGORY = "Product Category";
+    public static final String PRODUCTION = "Production";
+    public static final String ITEM = "Items";
+    public static final String RATE = "Rate";
+    public static final String MACHINE_SET = "Sets";
+    public static final String TIME_PERIOD = "Time Periods";
+    public static final String TRANSIT = "Transit";
+    public static final String WORK_IN_PROCESS = "Items WIP";
+    public static final String RAW_MATERIAL_PO = "Raw Material Po";
+    public static final String INIT_INVENTORY = "Item Initial Inventory";
+
+
 //    public static void guessTomorrowInput(String todayFile,
 //                                          RandomDataGenerator rdg)
 //            throws IOException {

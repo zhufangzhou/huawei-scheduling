@@ -142,7 +142,7 @@ public class Environment {
 
             // Read the time periods
             Map<Integer, TimePeriod> timePeriodMap = new HashMap<>();
-            sheet = wb.getSheetAt(ExcelProcessor.TIME_PERIOD_IDX);
+            sheet = wb.getSheet(ExcelProcessor.TIME_PERIOD);
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
@@ -177,10 +177,10 @@ public class Environment {
                     remainingWeekDays = 6;
             }
 
-            // Read the product catogories
+            // Read the product categories
             Map<String, ProductCategory> productCategoryMap = new HashMap<>();
 
-            sheet = wb.getSheetAt(ExcelProcessor.PRODUCT_CATEGORY_IDX);
+            sheet = wb.getSheet(ExcelProcessor.PRODUCT_CATEGORY);
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
@@ -194,7 +194,7 @@ public class Environment {
             // Read the capacity types
             Map<String, CapacityType> capacityTypeMap = new HashMap<>();
 
-            sheet = wb.getSheetAt(ExcelProcessor.CAPACITY_TYPE_IDX);
+            sheet = wb.getSheet(ExcelProcessor.CAPACITY_TYPE);
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
@@ -208,7 +208,7 @@ public class Environment {
             // Read the plants
             Map<String, Plant> plantMap = new HashMap<>();
 
-            sheet = wb.getSheetAt(ExcelProcessor.PLANT_IDX);
+            sheet = wb.getSheet(ExcelProcessor.PLANT);
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
@@ -223,7 +223,7 @@ public class Environment {
             // Read the machine sets
             Map<String, MachineSet> machineSetMap = new HashMap<>();
 
-            sheet = wb.getSheetAt(ExcelProcessor.MACHINE_SET_IDX);
+            sheet = wb.getSheet(ExcelProcessor.MACHINE_SET);
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
@@ -241,7 +241,7 @@ public class Environment {
             // Read the items
             Map<String, Item> itemMap = new HashMap<>();
 
-            sheet = wb.getSheetAt(ExcelProcessor.ITEM_IDX);
+            sheet = wb.getSheet(ExcelProcessor.ITEM);
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
@@ -257,7 +257,7 @@ public class Environment {
             }
 
             // Read the demands and merge into items
-            sheet = wb.getSheetAt(ExcelProcessor.DEMAND_IDX);
+            sheet = wb.getSheet(ExcelProcessor.DEMAND);
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
@@ -284,7 +284,7 @@ public class Environment {
 //            Map<Pair<Plant, Plant>, Integer> transitLeadTimeMap = new HashMap<>();
 
             List<Transit> transits = new ArrayList<>();
-            sheet = wb.getSheetAt(ExcelProcessor.TRANSIT_IDX);
+            sheet = wb.getSheet(ExcelProcessor.TRANSIT);
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
@@ -310,7 +310,7 @@ public class Environment {
             }
 
             // Read the capacity and merge into machine set
-            sheet = wb.getSheetAt(ExcelProcessor.CAPACITY_IDX);
+            sheet = wb.getSheet(ExcelProcessor.CAPACITY);
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
@@ -326,7 +326,7 @@ public class Environment {
             }
 
             // Read the initial inventories and merge into plants
-            sheet = wb.getSheetAt(ExcelProcessor.INIT_INVENTORY_IDX);
+            sheet = wb.getSheet(ExcelProcessor.INIT_INVENTORY);
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
@@ -338,7 +338,7 @@ public class Environment {
             }
 
             // Read the production and merge into items
-            sheet = wb.getSheetAt(ExcelProcessor.PRODUCTION_IDX);
+            sheet = wb.getSheet(ExcelProcessor.PRODUCTION);
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
@@ -360,7 +360,7 @@ public class Environment {
             }
 
             // Read the boms and merge into productions
-            sheet = wb.getSheetAt(ExcelProcessor.PLANT_BOM_IDX);
+            sheet = wb.getSheet(ExcelProcessor.PLANT_BOM);
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
@@ -375,7 +375,7 @@ public class Environment {
             }
 
             // Read the item capacity type and rate
-            sheet = wb.getSheetAt(ExcelProcessor.RATE_IDX);
+            sheet = wb.getSheet(ExcelProcessor.RATE);
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
@@ -397,7 +397,7 @@ public class Environment {
             }
 
             // Read the work in process and merge into plants
-            sheet = wb.getSheetAt(ExcelProcessor.WORK_IN_PROCESS_IDX);
+            sheet = wb.getSheet(ExcelProcessor.WORK_IN_PROCESS);
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
@@ -411,7 +411,7 @@ public class Environment {
             }
 
             // Read the item sets and merge into items
-            sheet = wb.getSheetAt(ExcelProcessor.ITEM_SETS_IDX);
+            sheet = wb.getSheet(ExcelProcessor.ITEM_SETS);
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
@@ -429,14 +429,19 @@ public class Environment {
             }
 
             // Read the frozen productions and merge into items
-            sheet = wb.getSheetAt(ExcelProcessor.FROZEN_PROD_IDX);
+            sheet = wb.getSheet(ExcelProcessor.FROZEN_PROD);
+            Set<String> unknownPlantSet = new HashSet<>();
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
                 Item item = itemMap.get(df.formatCellValue(row.getCell(0)));
                 Plant plant = plantMap.get(df.formatCellValue(row.getCell(1)));
                 if (plant == null) {
-                    System.out.println("Unknown plant: " + df.formatCellValue(row.getCell(1)));
+                    String unknownPlant = df.formatCellValue(row.getCell(1));
+                    if (!unknownPlantSet.contains(unknownPlant)) {
+                        System.out.println("Unknown plant: " + unknownPlant);
+                        unknownPlantSet.add(unknownPlant);
+                    }
                 }
                 int date = Integer.valueOf(df.formatCellValue(row.getCell(2)));
                 TimePeriod timePeriod = timePeriodMap.get(date);
@@ -455,13 +460,18 @@ public class Environment {
             }
 
             // Read the raw material po and merge into plants
-            sheet = wb.getSheetAt(ExcelProcessor.RAW_MATERIAL_PO_IDX);
+            sheet = wb.getSheet(ExcelProcessor.RAW_MATERIAL_PO);
+            Set<String> unknownItemSet = new HashSet<>();
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
                 Item item = itemMap.get(df.formatCellValue(row.getCell(0)));
                 if (item == null) {
-                    System.out.println("Unknown item:" + df.formatCellValue(row.getCell(0)));
+                    String unknownItem = df.formatCellValue(row.getCell(0));
+                    if (!unknownItemSet.contains(unknownItem)) {
+                        System.out.println("Unknown item:" + unknownItem);
+                        unknownItemSet.add(unknownItem);
+                    }
                 }
                 long quantity = Integer.valueOf(df.formatCellValue(row.getCell(1)));
                 int date = Integer.valueOf(df.formatCellValue(row.getCell(2)));
