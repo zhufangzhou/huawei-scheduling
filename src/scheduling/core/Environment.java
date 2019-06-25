@@ -573,6 +573,43 @@ public class Environment {
                 plant.putRawMaterialPo(item, quantity, dateIndex);
             }
 
+            // Find relationships between items and plants
+            // 1. Production relationship
+            for (Item item : itemMap.values()) {
+                for (Production prod : item.getProductionMap().values()) {
+                    Plant plant = prod.getPlant();
+
+                    // items that can be produced in the plant
+                    plant.putItem(item);
+
+                    for (BomComponent bomComponent : prod.getBom()) {
+                        Item compItem = bomComponent.getMaterial();
+
+                        // items that can be used as material to produce other item in the plant
+                        plant.putItem(compItem);
+                    }
+                }
+            }
+            // 2. Po relationship and wip relationship
+            for (Plant plant : plantMap.values()) {
+                for (Map<Item, Long> poMap : plant.getRawMaterialPoMap().values()) {
+                    for (Item item : poMap.keySet()) {
+                        plant.putItem(item);
+                    }
+                }
+                for (Map<Item, Long> wipMap : plant.getWorkInProcessMap().values()) {
+                    for (Item item : wipMap.keySet()) {
+                        plant.putItem(item);
+                    }
+                }
+            }
+            // 3. Inventory
+            for (Item item : itemMap.values()) {
+                for (Plant plant : item.getInitInventoryMap().keySet()) {
+                    plant.putItem(item);
+                }
+            }
+
             // Read the transit information and merge into plants and item
 //            Map<Pair<Plant, Plant>, Integer> transitCostMap = new HashMap<>();
 //            Map<Pair<Plant, Plant>, Integer> transitLeadTimeMap = new HashMap<>();
@@ -590,7 +627,10 @@ public class Environment {
                 int leadTime = Integer.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("leadTime"))));
 
                 Transit transit = new Transit(item, fromPlant, toPlant, cost, leadTime);
-                transits.add(transit);
+                // Only keep those transits that item in both fromPlant and toPlant
+                if (fromPlant.getItemSet().contains(item) && toPlant.getItemSet().contains(item)) {
+                    transits.add(transit);
+                }
 
 //                // transit maps
 //                transitCostMap.put(new Pair(fromPlant, toPlant), cost);
