@@ -4,6 +4,14 @@ import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.poi.xssf.usermodel.*;
 import org.apache.poi.ss.usermodel.*;
 import org.json.JSONObject;
+import scheduling.core.Schedule;
+import scheduling.core.input.Production;
+import scheduling.core.input.TimePeriod;
+import scheduling.core.input.Transit;
+import scheduling.core.output.ProductionInstruction;
+import scheduling.core.output.SupplyInstruction;
+import scheduling.core.output.TransitInstruction;
+import scheduling.simulation.State;
 
 import java.io.*;
 import java.util.HashMap;
@@ -236,6 +244,89 @@ public class ExcelProcessor {
             return Double.POSITIVE_INFINITY;
 
         return Double.valueOf(content);
+    }
+
+    public static void outputSchedule(Schedule schedule, File file, State state) {
+        int startDate = state.getEnv().getStartDate();
+
+        Workbook workbook = new XSSFWorkbook();
+
+        // create the production sheet
+        String[] prodCols = {"item_code", "qty", "period", "plant"};
+        Sheet sheet = workbook.createSheet("prod");
+        Row headerRow = sheet.createRow(0);
+        for(int i = 0; i < prodCols.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(prodCols[i]);
+        }
+
+        int rowNum = 1;
+        for (int dateId : schedule.getProductionSchedule().keySet()) {
+            for (Production production : schedule.getProductionSchedule().get(dateId).keySet()) {
+                ProductionInstruction instruction = schedule.getProductionSchedule().get(dateId).get(production);
+
+                Row row = sheet.createRow(rowNum++);
+                row.createCell(0).setCellValue(production.getItem().toString());
+                row.createCell(1).setCellValue(instruction.getQuantity());
+                row.createCell(2).setCellValue(TimePeriod.dateOfId(startDate, dateId));
+                row.createCell(3).setCellValue(production.getPlant().toString());
+            }
+        }
+
+        // create the transit sheet
+        String[] transitCols = {"item_code", "qty", "src_plant", "dest_plant", "period"};
+        sheet = workbook.createSheet("transit");
+        headerRow = sheet.createRow(0);
+        for(int i = 0; i < transitCols.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(transitCols[i]);
+        }
+
+        rowNum = 1;
+        for (int dateId : schedule.getTransitSchedule().keySet()) {
+            for (Transit transit : schedule.getTransitSchedule().get(dateId).keySet()) {
+                TransitInstruction instruction = schedule.getTransitSchedule().get(dateId).get(transit);
+
+                Row row = sheet.createRow(rowNum++);
+                row.createCell(0).setCellValue(transit.getItem().toString());
+                row.createCell(1).setCellValue(instruction.getQuantity());
+                row.createCell(2).setCellValue(transit.getFromPlant().toString());
+                row.createCell(3).setCellValue(transit.getToPlant().toString());
+                row.createCell(4).setCellValue(TimePeriod.dateOfId(startDate, dateId));
+            }
+        }
+
+        // create the supply sheet
+        String[] supplyCols = {"item_code", "period", "qty", "plant"};
+        sheet = workbook.createSheet("supply");
+        headerRow = sheet.createRow(0);
+        for(int i = 0; i < transitCols.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(transitCols[i]);
+        }
+
+        rowNum = 1;
+        for (int dateId : schedule.getSupplySchedule().keySet()) {
+            for (SupplyInstruction instruction : schedule.getSupplySchedule().get(dateId).values()) {
+                Row row = sheet.createRow(rowNum++);
+                row.createCell(0).setCellValue(instruction.getItem().toString());
+                row.createCell(1).setCellValue(TimePeriod.dateOfId(startDate, dateId));
+                row.createCell(2).setCellValue(instruction.getQuantity());
+                row.createCell(3).setCellValue(instruction.getSupply().getSecond().toString());
+            }
+        }
+
+        try {
+            // write the workbook to file
+            FileOutputStream fileOut = new FileOutputStream(file);
+            workbook.write(fileOut);
+            fileOut.close();
+
+            // Closing the workbook
+            workbook.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 //    public static void main(String[] args) throws IOException {

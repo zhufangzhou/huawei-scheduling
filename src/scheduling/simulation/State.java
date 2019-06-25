@@ -1,5 +1,6 @@
 package scheduling.simulation;
 
+import io.ExcelProcessor;
 import org.apache.commons.math3.util.Pair;
 import scheduling.core.Environment;
 import scheduling.core.Schedule;
@@ -227,6 +228,9 @@ public class State {
         long duration = (finish-start);
 
         staticProb.getPlannedSchedule().calcFillRate();
+
+//        File outputFile = new File("output.xlsx");
+//        ExcelProcessor.outputSchedule(staticProb.getPlannedSchedule(), outputFile, staticProb);
         System.out.println("fill rate = " + staticProb.getPlannedSchedule().getFillRate());
         System.out.println("holding cost = " + staticProb.getPlannedSchedule().getHoldingCost());
         System.out.println("production cost = " + staticProb.getPlannedSchedule().getProductionCost());

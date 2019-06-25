@@ -39,8 +39,9 @@ public abstract class Scheduler {
 //            System.out.println("debug Schedule.java");
 
         long left = demand.getQuantity();
+        int nextDateId = demand.getDateId();
         while (left > 0) {
-            SupplyChain nextChain = nextSupplyChain(demand.getDateId(), demand.latestSupplyDate(schedule), demand.getItem(), schedule, state, chainRule, chainTB);
+            SupplyChain nextChain = nextSupplyChain(nextDateId, demand.latestSupplyDate(schedule), demand.getItem(), schedule, state, chainRule, chainTB);
 
             if (nextChain == null)
                 break;
@@ -59,6 +60,7 @@ public abstract class Scheduler {
             schedule.getSupplyChainMap().put(nextChain.cloneActive(), suppQuantity);
 
             left -= suppQuantity;
+            nextDateId = nextChain.getDateId(); // the next chains cannot be earlier than this one
         }
     }
 
@@ -70,6 +72,8 @@ public abstract class Scheduler {
      * @param item the item to be provided.
      * @param schedule the schedule.
      * @param state the state.
+     * @param chainRule the rule to select the next chain.
+     * @param chainTB the tie breaker for chain ties.
      * @return the next supply chain.
      */
     public SupplyChain nextSupplyChain(int dateId, int latestDateId, Item item, Schedule schedule, State state,
@@ -78,8 +82,9 @@ public abstract class Scheduler {
         List<SupplyChain> activeChains = new ArrayList<>();
 
         for (int d = dateId; d < latestDateId; d++) {
+            Set<SupplyChain> visited = new HashSet<>();
             for (SupplyChain chain : state.getSupplyChainMap().get(item).values()) {
-                chain.activateStreams(schedule, d, new HashSet<>());
+                chain.activateStreams(schedule, d, visited);
 
                 if (chain.isActive()) {
                     // if zero inventory and no production, then only transit

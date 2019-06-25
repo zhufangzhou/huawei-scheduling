@@ -47,13 +47,13 @@ public class GreedyStaticScheduler extends Scheduler {
             supplyDemand(dem, schedule, state, chainRule, chainTB);
         }
 
-        for (int d = schedule.getStartDateId(); d < schedule.getEndDateId(); d++) {
-            for (SupplyInstruction supplyInstruction : schedule.getSupplySchedule().get(d).values()) {
-                if (supplyInstruction.getQuantity() <= 0) {
-                    System.out.println("negative supply!");
-                }
-            }
-        }
+//        for (int d = schedule.getStartDateId(); d < schedule.getEndDateId(); d++) {
+//            for (SupplyInstruction supplyInstruction : schedule.getSupplySchedule().get(d).values()) {
+//                if (supplyInstruction.getQuantity() <= 0) {
+//                    System.out.println("negative supply!");
+//                }
+//            }
+//        }
 
 //        for (int dateId = 0; dateId < state.getEnv().getPeriod(); dateId++) {
 //            Map<Item, Long> dailyAccOrderDem = schedule.getAccOrderDemMap().get(dateId);

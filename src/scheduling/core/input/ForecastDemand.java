@@ -7,6 +7,8 @@ import scheduling.core.SupplyChain;
 public class ForecastDemand extends Demand {
     public ForecastDemand(int dateId, Item item, long quantity) {
         super(dateId, item, quantity);
+        this.type = 0;
+        this.priority = type+dateId;
     }
 
     @Override
