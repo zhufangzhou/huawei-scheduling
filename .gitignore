@@ -82,3 +82,4 @@ fabric.properties
 .idea
 .vscode
 *.iml
+*.jar
