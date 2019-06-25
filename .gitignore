@@ -76,8 +76,8 @@ fabric.properties
 # Editor-based Rest Client
 .idea/httpRequests
 
-.csv
-.xlsx
+*.csv
+*.xlsx
 .DS_Store
 .idea
 .vscode
