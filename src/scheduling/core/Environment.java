@@ -39,7 +39,12 @@ public class Environment {
     private int period; // the period (number of days) of the scheduling
     private Map<Integer, Integer> remainingWeekDaysMap;
 
-    public Environment(Map<String, ProductCategory> productCategoryMap, Map<String, CapacityType> capacityTypeMap, Map<String, Item> itemMap, Map<String, Plant> plantMap, Map<String, MachineSet> machineSetMap, List<Transit> transits) {
+    public Environment(Map<String, ProductCategory> productCategoryMap,
+                       Map<String, CapacityType> capacityTypeMap,
+                       Map<String, Item> itemMap,
+                       Map<String, Plant> plantMap,
+                       Map<String, MachineSet> machineSetMap,
+                       List<Transit> transits) {
         this.productCategoryMap = productCategoryMap;
         this.capacityTypeMap = capacityTypeMap;
         this.itemMap = itemMap;
@@ -214,7 +219,8 @@ public class Environment {
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
-                String name = df.formatCellValue(row.getCell(colIdxMap.get("name")));
+                // Convert capacity name to lower case to avoid case problem
+                String name = df.formatCellValue(row.getCell(colIdxMap.get("name"))).toLowerCase();
                 double rate = Double.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("defaultRate"))));
 
                 CapacityType ct = new CapacityType(name, rate);
@@ -247,7 +253,7 @@ public class Environment {
 
                 String name = df.formatCellValue(row.getCell(colIdxMap.get("set")));
                 Plant plant = plantMap.get(df.formatCellValue(row.getCell(colIdxMap.get("plant"))));
-                CapacityType ct = capacityTypeMap.get(df.formatCellValue(row.getCell(colIdxMap.get("capacityType"))));
+                CapacityType ct = capacityTypeMap.get(df.formatCellValue(row.getCell(colIdxMap.get("capacityType"))).toLowerCase());
                 double sf = ExcelProcessor.readDoubleCell(row.getCell(colIdxMap.get("smoothingFactor"))); // smoothing factor
 
                 MachineSet machineSet = new MachineSet(name, plant, ct, sf);
@@ -266,9 +272,23 @@ public class Environment {
 
                 String id = df.formatCellValue(row.getCell(colIdxMap.get("item")));
                 ItemType type = ItemType.get(df.formatCellValue(row.getCell(colIdxMap.get("itemType"))));
-                double mcost = Double.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("materialCost")))); // material cost
+                double mcost, hcost;
+                String mcostStr = df.formatCellValue(row.getCell(colIdxMap.get("materialCost")));
+                String hcostStr = df.formatCellValue(row.getCell(colIdxMap.get("holdingCost")));
+
+                // Process missing value
+                if (mcostStr == null || mcostStr.equals("")) {
+                    mcost = 0;
+                } else {
+                    mcost = Double.valueOf(mcostStr);
+                }
+                if (hcostStr == null || hcostStr.equals("")) {
+                    hcost = 0.1;
+                } else {
+                    hcost = Double.valueOf(hcostStr);
+                }
+
                 ProductCategory pc = productCategoryMap.get(df.formatCellValue(row.getCell(colIdxMap.get("productCategory")))); // product category
-                double hcost = Double.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("holdingCost"))));
 
                 Item item = new Item(id, type, mcost, pc, hcost);
 
@@ -284,9 +304,14 @@ public class Environment {
                 Item item = itemMap.get(df.formatCellValue(row.getCell(colIdxMap.get("item"))));
                 Date rawDate = Environment.parseDateStr(df.formatCellValue(row.getCell(colIdxMap.get("timePeriod"))));
                 int date = Integer.valueOf(targetSdf.format(rawDate));
-                long odem = Long.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("orderDemand")))); // order demand
-                long fdem = Long.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("forecastDemand")))); // forecast demand
+                // TODO: Demand could be continuous value (usually for raw material demand);
+                long odem = (long) Math.floor(Double.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("orderDemand")))));
+                long fdem = (long) Math.floor(Double.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("forecastDemand")))));
 
+                // Only consider demands within time period
+                if (!timePeriodMap.containsKey(date)) {
+                    continue;
+                }
                 TimePeriod timePeriod = timePeriodMap.get(date);
                 int dueDate = timePeriod.dueDate();
                 int dueDateIndex = TimePeriod.gap(startDate, dueDate);
@@ -298,37 +323,6 @@ public class Environment {
                 if (fdem > 0) {
                     item.getForecastDemandMap().put(dueDateIndex, fdem);
                 }
-            }
-
-            // Read the transit information and merge into plants and item
-//            Map<Pair<Plant, Plant>, Integer> transitCostMap = new HashMap<>();
-//            Map<Pair<Plant, Plant>, Integer> transitLeadTimeMap = new HashMap<>();
-
-            List<Transit> transits = new ArrayList<>();
-            sheet = wb.getSheet(ExcelProcessor.TRANSIT);
-            colIdxMap = ExcelProcessor.parseHeader(ExcelProcessor.TRANSIT, sheet.getRow(0));
-            for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
-                row = sheet.getRow(i);
-
-                Item item = itemMap.get(df.formatCellValue(row.getCell(colIdxMap.get("item"))));
-                Plant fromPlant = plantMap.get(df.formatCellValue(row.getCell(colIdxMap.get("sourcePlant"))));
-                Plant toPlant = plantMap.get(df.formatCellValue(row.getCell(colIdxMap.get("destinationPlant"))));
-                int cost = Integer.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("cost"))));
-                int leadTime = Integer.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("leadTime"))));
-
-                Transit transit = new Transit(item, fromPlant, toPlant, cost, leadTime);
-                transits.add(transit);
-
-//                // transit maps
-//                transitCostMap.put(new Pair(fromPlant, toPlant), cost);
-//                transitLeadTimeMap.put(new Pair(fromPlant, toPlant), leadTime);
-
-                // plant transit maps
-                fromPlant.putTransitOutMap(toPlant, item);
-                toPlant.putTransitInMap(fromPlant, item);
-
-                // item transits
-                item.addTransit(transit);
             }
 
             // Read the capacity and merge into machine set
@@ -355,9 +349,9 @@ public class Environment {
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
-                Item item = itemMap.get(df.formatCellValue(row.getCell(0)));
-                long quantity = Long.valueOf(df.formatCellValue(row.getCell(1)));
-                Plant plant = plantMap.get(df.formatCellValue(row.getCell(2)));
+                Item item = itemMap.get(df.formatCellValue(row.getCell(colIdxMap.get("item"))));
+                long quantity = Long.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("quantity"))));
+                Plant plant = plantMap.get(df.formatCellValue(row.getCell(colIdxMap.get("plant"))));
 
                 item.getInitInventoryMap().put(plant, quantity);
             }
@@ -370,14 +364,71 @@ public class Environment {
 
                 Item item = itemMap.get(df.formatCellValue(row.getCell(colIdxMap.get("item"))));
                 Plant plant = plantMap.get(df.formatCellValue(row.getCell(colIdxMap.get("plant"))));
-                double cost = Double.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("productionCost"))));
-                int leadTime = Integer.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("leadTime")))); // Integer.valueOf(df.formatCellValue(row.getCell(3)));
-                int preWeekProd = Integer.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("previousWeekProduction"))));
-                int wtdProd = Integer.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("weekToDateProduction")))); // week-to-date productions
-                int lotSize = 1; //[data error, all zeros] Integer.valueOf(df.formatCellValue(row.getCell(6)));
-                int minProd = Integer.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("minProduction"))));
-                int maxProd = Integer.MAX_VALUE; // Integer.valueOf(df.formatCellValue(row.getCell(8)));
-                int fds = Integer.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("maxProduction"))));
+
+                String costStr = df.formatCellValue(row.getCell(colIdxMap.get("productionCost")));
+                double cost;
+                if (costStr == null || costStr.equals("")) {
+                    cost = 1;
+                } else {
+                    cost = Double.valueOf(costStr);
+                }
+
+                String leadTimeStr = df.formatCellValue(row.getCell(colIdxMap.get("leadTime")));
+                int leadTime;
+                if (leadTimeStr == null || leadTimeStr.equals("")) {
+                    leadTime = 1;
+                } else {
+                    leadTime = (int) Math.ceil(Double.valueOf(leadTimeStr));
+                }
+
+                String preWeekProdStr = df.formatCellValue(row.getCell(colIdxMap.get("previousWeekProduction")));
+                int preWeekProd;
+                if (preWeekProdStr == null || preWeekProdStr.equals("")) {
+                    preWeekProd = 0;
+                } else {
+                    preWeekProd = Integer.valueOf(preWeekProdStr);
+                }
+
+                String wtdProdStr = df.formatCellValue(row.getCell(colIdxMap.get("weekToDateProduction")));
+                int wtdProd;
+                if (wtdProdStr == null || wtdProdStr.equals("")) {
+                    wtdProd = 0;
+                } else {
+                    wtdProd = Integer.valueOf(wtdProdStr);
+                }
+
+                String lotSizeStr = df.formatCellValue(row.getCell(colIdxMap.get("lotSize")));
+                int lotSize;
+                if (lotSizeStr == null || lotSizeStr.equals("")) {
+                    lotSize = 1;
+                } else {
+                    lotSize = Math.max(1, Integer.valueOf(lotSizeStr));
+                }
+
+                String minProdStr = df.formatCellValue(row.getCell(colIdxMap.get("minProduction")));
+                int minProd;
+                if (minProdStr == null || minProdStr.equals("")) {
+                    minProd = 1;
+                } else {
+                    minProd = Math.max(1, Integer.valueOf(minProdStr));
+                }
+
+                String maxProdStr = df.formatCellValue(row.getCell(colIdxMap.get("maxProduction")));
+                int maxProd;
+                if (maxProdStr == null || maxProdStr.equals("")) {
+                    maxProd = Integer.MAX_VALUE;
+                } else {
+                    maxProd = Math.max(minProd, Integer.valueOf(maxProdStr));
+                }
+
+                String fdsStr = df.formatCellValue(row.getCell(colIdxMap.get("fixedDaysSupply")));;
+                int fds;
+                if (fdsStr == null || fdsStr.equals("")) {
+                    fds = 1;
+                } else {
+                    fds = Integer.valueOf(fdsStr);
+                }
+
 
                 Production production = new Production(item, plant, cost, leadTime,
                         preWeekProd, wtdProd, lotSize, minProd, maxProd, fds);
@@ -393,7 +444,8 @@ public class Environment {
 
                 Item item = itemMap.get(df.formatCellValue(row.getCell(colIdxMap.get("assembly"))));
                 Item material = itemMap.get(df.formatCellValue(row.getCell(colIdxMap.get("component"))));
-                int quantity = Integer.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("quantity"))));
+                // TODO: Bom quantity could be continuous value
+                int quantity = (int) Math.round(Double.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("quantity")))));
                 SupplyType st = SupplyType.get(df.formatCellValue(row.getCell(colIdxMap.get("supplyType"))));
                 Plant plant = plantMap.get(df.formatCellValue(row.getCell(colIdxMap.get("plant"))));
 
@@ -519,6 +571,37 @@ public class Environment {
                 int dateIndex = TimePeriod.gap(startDate, date);
 
                 plant.putRawMaterialPo(item, quantity, dateIndex);
+            }
+
+            // Read the transit information and merge into plants and item
+//            Map<Pair<Plant, Plant>, Integer> transitCostMap = new HashMap<>();
+//            Map<Pair<Plant, Plant>, Integer> transitLeadTimeMap = new HashMap<>();
+
+            List<Transit> transits = new ArrayList<>();
+            sheet = wb.getSheet(ExcelProcessor.TRANSIT);
+            colIdxMap = ExcelProcessor.parseHeader(ExcelProcessor.TRANSIT, sheet.getRow(0));
+            for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
+                row = sheet.getRow(i);
+
+                Item item = itemMap.get(df.formatCellValue(row.getCell(colIdxMap.get("item"))));
+                Plant fromPlant = plantMap.get(df.formatCellValue(row.getCell(colIdxMap.get("sourcePlant"))));
+                Plant toPlant = plantMap.get(df.formatCellValue(row.getCell(colIdxMap.get("destinationPlant"))));
+                int cost = Integer.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("cost"))));
+                int leadTime = Integer.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("leadTime"))));
+
+                Transit transit = new Transit(item, fromPlant, toPlant, cost, leadTime);
+                transits.add(transit);
+
+//                // transit maps
+//                transitCostMap.put(new Pair(fromPlant, toPlant), cost);
+//                transitLeadTimeMap.put(new Pair(fromPlant, toPlant), leadTime);
+
+                // plant transit maps
+                fromPlant.putTransitOutMap(toPlant, item);
+                toPlant.putTransitInMap(fromPlant, item);
+
+                // item transits
+                item.addTransit(transit);
             }
 
             /**

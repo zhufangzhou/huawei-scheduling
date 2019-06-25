@@ -216,16 +216,20 @@ public class State {
     }
 
     public static void main(String[] args) throws IOException {
-        File file = new File("data/e_vuw_test_multi_plant_03.xlsx");
+
+        long start;
+        double duration;
+        File file = new File("data/e_vuw_test_multi_plant_01.xlsx");
         FileReader columnNameReader = new FileReader("conf/column_name_v1.json");
-
+        start = System.currentTimeMillis();
         State staticProb = State.staticProbFromFile(file, columnNameReader);
+        duration = (System.currentTimeMillis()-start) / 1000.;
+        System.out.println("Reading data from excel file = " + duration + "s");
 
+        start = System.currentTimeMillis();
         Scheduler scheduler = new GreedyStaticScheduler();
-        long start = System.currentTimeMillis();
         scheduler.planSchedule(staticProb);
-        long finish = System.currentTimeMillis();
-        long duration = (finish-start);
+        duration = (System.currentTimeMillis()-start) / 1000.;
 
         staticProb.getPlannedSchedule().calcFillRate();
 
@@ -235,6 +239,6 @@ public class State {
         System.out.println("holding cost = " + staticProb.getPlannedSchedule().getHoldingCost());
         System.out.println("production cost = " + staticProb.getPlannedSchedule().getProductionCost());
         System.out.println("transit cost = " + staticProb.getPlannedSchedule().getTransitCost());
-        System.out.println("finished, duration = " + duration);
+        System.out.println("finished, duration = " + duration + "s");
     }
 }

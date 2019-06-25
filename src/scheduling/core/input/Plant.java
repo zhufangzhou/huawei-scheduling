@@ -1,9 +1,6 @@
 package scheduling.core.input;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * A plant/factory.
@@ -20,19 +17,22 @@ public class Plant implements Comparable<Plant> {
     private Map<ItemType, Integer> frozenDaysMap;
     private List<Integer> holidays;
     private Map<Integer, Map<Item, Long>> rawMaterialPoMap;
+    // items that can be stored in this plant
+    private Set<Item> itemSet;
 
     public Plant(String name, int lockedOutDays, String type) {
         this.name = name;
         this.type = type;
         this.lockedOutDays = lockedOutDays;
 
-        transitOutMap = new HashMap<>();
-        transitInMap = new HashMap<>();
-        workInProcessMap = new HashMap<>();
-        machineSetMap = new HashMap<>();
-        frozenDaysMap = new HashMap<>();
-        holidays = new ArrayList<>();
-        rawMaterialPoMap = new HashMap<>();
+        this.transitOutMap = new HashMap<>();
+        this.transitInMap = new HashMap<>();
+        this.workInProcessMap = new HashMap<>();
+        this.machineSetMap = new HashMap<>();
+        this.frozenDaysMap = new HashMap<>();
+        this.holidays = new ArrayList<>();
+        this.rawMaterialPoMap = new HashMap<>();
+        this.itemSet = new HashSet<>();
     }
 
     public String getName() {
@@ -41,6 +41,14 @@ public class Plant implements Comparable<Plant> {
 
     public String getType() {
         return type;
+    }
+
+    public Set<Item> getItemSet() {
+        return itemSet;
+    }
+
+    public void setItemSet(Set<Item> itemSet) {
+        this.itemSet = itemSet;
     }
 
     public int getLockedOutDays() {
@@ -114,6 +122,10 @@ public class Plant implements Comparable<Plant> {
             rawMaterialPoMap.put(date, dailyRawMatPo);
         }
         dailyRawMatPo.put(item, quantity);
+    }
+
+    public void putItem(Item item) {
+        this.itemSet.add(item);
     }
 
     @Override

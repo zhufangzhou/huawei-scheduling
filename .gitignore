@@ -77,3 +77,8 @@ fabric.properties
 .idea/httpRequests
 
 .csv
+.xlsx
+.DS_Store
+.idea
+.vscode
+*.iml
