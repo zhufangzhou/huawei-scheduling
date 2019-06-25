@@ -9,6 +9,9 @@ import scheduling.core.input.*;
 import util.DisjointSets;
 
 import java.io.File;
+import java.io.FileReader;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
@@ -127,28 +130,37 @@ public class Environment {
 
     /**
      * Read the environment from a .xlsx file.
+     *
      * @param file the .xlsx file.
      * @return the environment.
      */
-    public static Environment readFromFile(File file) {
+    public static Environment readFromFile(File file, FileReader columnNameReader) {
         Environment environment = null;
+        SimpleDateFormat targetSdf = new SimpleDateFormat("yyyyMMdd");
 
         try {
             XSSFWorkbook wb = new XSSFWorkbook(file);
             XSSFSheet sheet;
+            Map<String, Integer> colIdxMap;
             XSSFRow row;
 
             DataFormatter df = new DataFormatter();
 
+            ExcelProcessor.initColNames(columnNameReader);
+
             // Read the time periods
             Map<Integer, TimePeriod> timePeriodMap = new HashMap<>();
             sheet = wb.getSheet(ExcelProcessor.TIME_PERIOD);
+            colIdxMap = ExcelProcessor.parseHeader(ExcelProcessor.TIME_PERIOD, sheet.getRow(0));
+
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
-                int date = Integer.valueOf(df.formatCellValue(row.getCell(0)));
-                int week = Integer.valueOf(df.formatCellValue(row.getCell(2)));
-                int length = Integer.valueOf(df.formatCellValue(row.getCell(3)));
+                String rawDate = df.formatCellValue(row.getCell(colIdxMap.get("timePeriod")));
+                int date = Integer.valueOf(targetSdf.format(Environment.parseDateStr(rawDate)));
+                String rawWeek = df.formatCellValue(row.getCell(colIdxMap.get("week")));
+                int week = Integer.valueOf(targetSdf.format(Environment.parseDateStr(rawWeek)));
+                int length = Integer.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("length"))));
 
                 TimePeriod timePeriod = new TimePeriod(date, week, length);
                 timePeriodMap.put(date, timePeriod);
@@ -164,15 +176,15 @@ public class Environment {
                 if (date > endDate)
                     endDate = date;
             }
-            int period = TimePeriod.gap(startDate, endDate)+1;
+            int period = TimePeriod.gap(startDate, endDate) + 1;
 
             Map<Integer, Integer> remainingWeekDaysMap = new HashMap<>();
             int weekStarts = timePeriodMap.get(startDate).getWeek();
-            int remainingWeekDays = 6-TimePeriod.gap(weekStarts, startDate);
+            int remainingWeekDays = 6 - TimePeriod.gap(weekStarts, startDate);
             for (int d = 0; d < period; d++) {
                 remainingWeekDaysMap.put(d, remainingWeekDays);
 
-                remainingWeekDays --;
+                remainingWeekDays--;
                 if (remainingWeekDays < 0)
                     remainingWeekDays = 6;
             }
@@ -181,11 +193,13 @@ public class Environment {
             Map<String, ProductCategory> productCategoryMap = new HashMap<>();
 
             sheet = wb.getSheet(ExcelProcessor.PRODUCT_CATEGORY);
+            colIdxMap = ExcelProcessor.parseHeader(ExcelProcessor.PRODUCT_CATEGORY, sheet.getRow(0));
+
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
-                String name = df.formatCellValue(row.getCell(0));
-                double fr = Double.valueOf(df.formatCellValue(row.getCell(1)));
+                String name = df.formatCellValue(row.getCell(colIdxMap.get("productCategory")));
+                double fr = Double.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("fillRate"))));
 
                 ProductCategory pc = new ProductCategory(name, fr);
                 productCategoryMap.put(name, pc);
@@ -195,11 +209,13 @@ public class Environment {
             Map<String, CapacityType> capacityTypeMap = new HashMap<>();
 
             sheet = wb.getSheet(ExcelProcessor.CAPACITY_TYPE);
+            colIdxMap = ExcelProcessor.parseHeader(ExcelProcessor.CAPACITY_TYPE, sheet.getRow(0));
+
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
-                String name = df.formatCellValue(row.getCell(0));
-                double rate = Double.valueOf(df.formatCellValue(row.getCell(1)));
+                String name = df.formatCellValue(row.getCell(colIdxMap.get("name")));
+                double rate = Double.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("defaultRate"))));
 
                 CapacityType ct = new CapacityType(name, rate);
                 capacityTypeMap.put(name, ct);
@@ -209,12 +225,13 @@ public class Environment {
             Map<String, Plant> plantMap = new HashMap<>();
 
             sheet = wb.getSheet(ExcelProcessor.PLANT);
+            colIdxMap = ExcelProcessor.parseHeader(ExcelProcessor.PLANT, sheet.getRow(0));
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
-                String name = df.formatCellValue(row.getCell(0));
-                int lod = Integer.valueOf(df.formatCellValue(row.getCell(1))); // locked out days
-                String type = df.formatCellValue(row.getCell(1));
+                String name = df.formatCellValue(row.getCell(colIdxMap.get("plant")));
+                int lod = Integer.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("lockedOutDays")))); // locked out days
+                String type = df.formatCellValue(row.getCell(colIdxMap.get("type")));
 
                 Plant plant = new Plant(name, lod, type);
                 plantMap.put(name, plant);
@@ -224,13 +241,14 @@ public class Environment {
             Map<String, MachineSet> machineSetMap = new HashMap<>();
 
             sheet = wb.getSheet(ExcelProcessor.MACHINE_SET);
+            colIdxMap = ExcelProcessor.parseHeader(ExcelProcessor.MACHINE_SET, sheet.getRow(0));
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
-                String name = df.formatCellValue(row.getCell(0));
-                Plant plant = plantMap.get(df.formatCellValue(row.getCell(1)));
-                CapacityType ct = capacityTypeMap.get(df.formatCellValue(row.getCell(2)));
-                double sf = ExcelProcessor.readDoubleCell(row.getCell(3)); // smoothing factor
+                String name = df.formatCellValue(row.getCell(colIdxMap.get("set")));
+                Plant plant = plantMap.get(df.formatCellValue(row.getCell(colIdxMap.get("plant"))));
+                CapacityType ct = capacityTypeMap.get(df.formatCellValue(row.getCell(colIdxMap.get("capacityType"))));
+                double sf = ExcelProcessor.readDoubleCell(row.getCell(colIdxMap.get("smoothingFactor"))); // smoothing factor
 
                 MachineSet machineSet = new MachineSet(name, plant, ct, sf);
 
@@ -242,14 +260,15 @@ public class Environment {
             Map<String, Item> itemMap = new HashMap<>();
 
             sheet = wb.getSheet(ExcelProcessor.ITEM);
+            colIdxMap = ExcelProcessor.parseHeader(ExcelProcessor.ITEM, sheet.getRow(0));
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
-                String id = df.formatCellValue(row.getCell(0));
-                ItemType type = ItemType.get(df.formatCellValue(row.getCell(1)));
-                double mcost = Double.valueOf(df.formatCellValue(row.getCell(2))); // material cost
-                ProductCategory pc = productCategoryMap.get(df.formatCellValue(row.getCell(5))); // product category
-                double hcost = Double.valueOf(df.formatCellValue(row.getCell(6)));
+                String id = df.formatCellValue(row.getCell(colIdxMap.get("item")));
+                ItemType type = ItemType.get(df.formatCellValue(row.getCell(colIdxMap.get("itemType"))));
+                double mcost = Double.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("materialCost")))); // material cost
+                ProductCategory pc = productCategoryMap.get(df.formatCellValue(row.getCell(colIdxMap.get("productCategory")))); // product category
+                double hcost = Double.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("holdingCost"))));
 
                 Item item = new Item(id, type, mcost, pc, hcost);
 
@@ -258,13 +277,15 @@ public class Environment {
 
             // Read the demands and merge into items
             sheet = wb.getSheet(ExcelProcessor.DEMAND);
+            colIdxMap = ExcelProcessor.parseHeader(ExcelProcessor.DEMAND, sheet.getRow(0));
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
-                Item item = itemMap.get(df.formatCellValue(row.getCell(0)));
-                int date = Integer.valueOf(df.formatCellValue(row.getCell(1)));
-                long odem = Long.valueOf(df.formatCellValue(row.getCell(2))); // order demand
-                long fdem = Long.valueOf(df.formatCellValue(row.getCell(3))); // forecast demand
+                Item item = itemMap.get(df.formatCellValue(row.getCell(colIdxMap.get("item"))));
+                Date rawDate = Environment.parseDateStr(df.formatCellValue(row.getCell(colIdxMap.get("timePeriod"))));
+                int date = Integer.valueOf(targetSdf.format(rawDate));
+                long odem = Long.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("orderDemand")))); // order demand
+                long fdem = Long.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("forecastDemand")))); // forecast demand
 
                 TimePeriod timePeriod = timePeriodMap.get(date);
                 int dueDate = timePeriod.dueDate();
@@ -285,14 +306,15 @@ public class Environment {
 
             List<Transit> transits = new ArrayList<>();
             sheet = wb.getSheet(ExcelProcessor.TRANSIT);
+            colIdxMap = ExcelProcessor.parseHeader(ExcelProcessor.TRANSIT, sheet.getRow(0));
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
-                Item item = itemMap.get(df.formatCellValue(row.getCell(0)));
-                Plant fromPlant = plantMap.get(df.formatCellValue(row.getCell(1)));
-                Plant toPlant = plantMap.get(df.formatCellValue(row.getCell(2)));
-                int cost = Integer.valueOf(df.formatCellValue(row.getCell(3)));
-                int leadTime = Integer.valueOf(df.formatCellValue(row.getCell(4)));
+                Item item = itemMap.get(df.formatCellValue(row.getCell(colIdxMap.get("item"))));
+                Plant fromPlant = plantMap.get(df.formatCellValue(row.getCell(colIdxMap.get("sourcePlant"))));
+                Plant toPlant = plantMap.get(df.formatCellValue(row.getCell(colIdxMap.get("destinationPlant"))));
+                int cost = Integer.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("cost"))));
+                int leadTime = Integer.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("leadTime"))));
 
                 Transit transit = new Transit(item, fromPlant, toPlant, cost, leadTime);
                 transits.add(transit);
@@ -311,12 +333,14 @@ public class Environment {
 
             // Read the capacity and merge into machine set
             sheet = wb.getSheet(ExcelProcessor.CAPACITY);
+            colIdxMap = ExcelProcessor.parseHeader(ExcelProcessor.CAPACITY, sheet.getRow(0));
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
-                MachineSet set = machineSetMap.get(df.formatCellValue(row.getCell(0)));
-                int date = Integer.valueOf(df.formatCellValue(row.getCell(1)));
-                double capacity = Double.valueOf(df.formatCellValue(row.getCell(4)));
+                MachineSet set = machineSetMap.get(df.formatCellValue(row.getCell(colIdxMap.get("set"))));
+                Date rawDate = Environment.parseDateStr(df.formatCellValue(row.getCell(colIdxMap.get("timePeriod"))));
+                int date = Integer.valueOf(targetSdf.format(rawDate));
+                double capacity = Double.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("capacity"))));
 
                 int dateIndex = TimePeriod.gap(startDate, date);
 
@@ -327,6 +351,7 @@ public class Environment {
 
             // Read the initial inventories and merge into plants
             sheet = wb.getSheet(ExcelProcessor.INIT_INVENTORY);
+            colIdxMap = ExcelProcessor.parseHeader(ExcelProcessor.INIT_INVENTORY, sheet.getRow(0));
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
@@ -339,19 +364,20 @@ public class Environment {
 
             // Read the production and merge into items
             sheet = wb.getSheet(ExcelProcessor.PRODUCTION);
+            colIdxMap = ExcelProcessor.parseHeader(ExcelProcessor.PRODUCTION, sheet.getRow(0));
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
-                Item item = itemMap.get(df.formatCellValue(row.getCell(0)));
-                Plant plant = plantMap.get(df.formatCellValue(row.getCell(1)));
-                double cost = Double.valueOf(df.formatCellValue(row.getCell(2)));
-                int leadTime = Integer.valueOf(df.formatCellValue(row.getCell(10))); // Integer.valueOf(df.formatCellValue(row.getCell(3)));
-                int preWeekProd = Integer.valueOf(df.formatCellValue(row.getCell(4)));
-                int wtdProd = Integer.valueOf(df.formatCellValue(row.getCell(5))); // week-to-date productions
+                Item item = itemMap.get(df.formatCellValue(row.getCell(colIdxMap.get("item"))));
+                Plant plant = plantMap.get(df.formatCellValue(row.getCell(colIdxMap.get("plant"))));
+                double cost = Double.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("productionCost"))));
+                int leadTime = Integer.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("leadTime")))); // Integer.valueOf(df.formatCellValue(row.getCell(3)));
+                int preWeekProd = Integer.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("previousWeekProduction"))));
+                int wtdProd = Integer.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("weekToDateProduction")))); // week-to-date productions
                 int lotSize = 1; //[data error, all zeros] Integer.valueOf(df.formatCellValue(row.getCell(6)));
-                int minProd = Integer.valueOf(df.formatCellValue(row.getCell(7)));
+                int minProd = Integer.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("minProduction"))));
                 int maxProd = Integer.MAX_VALUE; // Integer.valueOf(df.formatCellValue(row.getCell(8)));
-                int fds = Integer.valueOf(df.formatCellValue(row.getCell(9)));
+                int fds = Integer.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("maxProduction"))));
 
                 Production production = new Production(item, plant, cost, leadTime,
                         preWeekProd, wtdProd, lotSize, minProd, maxProd, fds);
@@ -361,14 +387,15 @@ public class Environment {
 
             // Read the boms and merge into productions
             sheet = wb.getSheet(ExcelProcessor.PLANT_BOM);
+            colIdxMap = ExcelProcessor.parseHeader(ExcelProcessor.PLANT_BOM, sheet.getRow(0));
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
-                Item item = itemMap.get(df.formatCellValue(row.getCell(0)));
-                Item material = itemMap.get(df.formatCellValue(row.getCell(1)));
-                int quantity = Integer.valueOf(df.formatCellValue(row.getCell(2)));
-                SupplyType st = SupplyType.get(df.formatCellValue(row.getCell(3)));
-                Plant plant = plantMap.get(df.formatCellValue(row.getCell(8)));
+                Item item = itemMap.get(df.formatCellValue(row.getCell(colIdxMap.get("assembly"))));
+                Item material = itemMap.get(df.formatCellValue(row.getCell(colIdxMap.get("component"))));
+                int quantity = Integer.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("quantity"))));
+                SupplyType st = SupplyType.get(df.formatCellValue(row.getCell(colIdxMap.get("supplyType"))));
+                Plant plant = plantMap.get(df.formatCellValue(row.getCell(colIdxMap.get("plant"))));
 
                 BomComponent bomComponent = new BomComponent(material, quantity, st);
                 item.getProduction(plant).addBom(bomComponent);
@@ -376,12 +403,13 @@ public class Environment {
 
             // Read the item capacity type and rate
             sheet = wb.getSheet(ExcelProcessor.RATE);
+            colIdxMap = ExcelProcessor.parseHeader(ExcelProcessor.RATE, sheet.getRow(0));
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
-                Item item = itemMap.get(df.formatCellValue(row.getCell(0)));
-                CapacityType capacityType = capacityTypeMap.get(df.formatCellValue(row.getCell(1)));
-                double rate = Double.valueOf(df.formatCellValue(row.getCell(2)));
+                Item item = itemMap.get(df.formatCellValue(row.getCell(colIdxMap.get("item"))));
+                CapacityType capacityType = capacityTypeMap.get(df.formatCellValue(row.getCell(colIdxMap.get("capacityType"))));
+                double rate = Double.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("rate"))));
 
                 item.getRateMap().put(capacityType, rate);
             }
@@ -398,13 +426,15 @@ public class Environment {
 
             // Read the work in process and merge into plants
             sheet = wb.getSheet(ExcelProcessor.WORK_IN_PROCESS);
+            colIdxMap = ExcelProcessor.parseHeader(ExcelProcessor.WORK_IN_PROCESS, sheet.getRow(0));
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
-                Item item = itemMap.get(df.formatCellValue(row.getCell(0)));
-                int date = Integer.valueOf(df.formatCellValue(row.getCell(1)));
-                long quantity = Long.valueOf(df.formatCellValue(row.getCell(2)));
-                Plant plant = plantMap.get(df.formatCellValue(row.getCell(3)));
+                Item item = itemMap.get(df.formatCellValue(row.getCell(colIdxMap.get("item"))));
+                Date rawDate = Environment.parseDateStr(df.formatCellValue(row.getCell(colIdxMap.get("availDate"))));
+                int date = Integer.valueOf(targetSdf.format(rawDate));
+                long quantity = Long.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("quantity"))));
+                Plant plant = plantMap.get(df.formatCellValue(row.getCell(colIdxMap.get("plant"))));
 
                 int dateIndex = TimePeriod.gap(startDate, date);
                 plant.putWorkInProcess(item, dateIndex, quantity);
@@ -412,11 +442,12 @@ public class Environment {
 
             // Read the item sets and merge into items
             sheet = wb.getSheet(ExcelProcessor.ITEM_SETS);
+            colIdxMap = ExcelProcessor.parseHeader(ExcelProcessor.ITEM_SETS, sheet.getRow(0));
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
-                MachineSet machineSet = machineSetMap.get(df.formatCellValue(row.getCell(0)));
-                Item item = itemMap.get(df.formatCellValue(row.getCell(1)));
+                MachineSet machineSet = machineSetMap.get(df.formatCellValue(row.getCell(colIdxMap.get("set"))));
+                Item item = itemMap.get(df.formatCellValue(row.getCell(colIdxMap.get("item"))));
 
                 Plant plant = machineSet.getPlant();
                 List<MachineSet> machineSets = item.getMachineMap().get(plant);
@@ -430,22 +461,25 @@ public class Environment {
 
             // Read the frozen productions and merge into items
             sheet = wb.getSheet(ExcelProcessor.FROZEN_PROD);
+            colIdxMap = ExcelProcessor.parseHeader(ExcelProcessor.FROZEN_PROD, sheet.getRow(0));
             Set<String> unknownPlantSet = new HashSet<>();
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
-                Item item = itemMap.get(df.formatCellValue(row.getCell(0)));
-                Plant plant = plantMap.get(df.formatCellValue(row.getCell(1)));
+                Item item = itemMap.get(df.formatCellValue(row.getCell(colIdxMap.get("item"))));
+                String plantStr = df.formatCellValue(row.getCell(colIdxMap.get("plant")));
+                Plant plant = plantMap.get(plantStr);
                 if (plant == null) {
-                    String unknownPlant = df.formatCellValue(row.getCell(1));
+                    String unknownPlant = plantStr;
                     if (!unknownPlantSet.contains(unknownPlant)) {
                         System.out.println("Unknown plant: " + unknownPlant);
                         unknownPlantSet.add(unknownPlant);
                     }
                 }
-                int date = Integer.valueOf(df.formatCellValue(row.getCell(2)));
+                Date rawDate = Environment.parseDateStr(df.formatCellValue(row.getCell(colIdxMap.get("timePeriod"))));
+                int date = Integer.valueOf(targetSdf.format(rawDate));
                 TimePeriod timePeriod = timePeriodMap.get(date);
-                long quantity = Long.valueOf(df.formatCellValue(row.getCell(3)));
+                long quantity = Long.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("quantity"))));
 
                 Map<Plant, Map<Integer, Long>> frozenProdMap = item.getFrozenProductionMap();
                 Map<Integer, Long> plantFrozenProdMap = frozenProdMap.get(plant);
@@ -461,21 +495,26 @@ public class Environment {
 
             // Read the raw material po and merge into plants
             sheet = wb.getSheet(ExcelProcessor.RAW_MATERIAL_PO);
+            colIdxMap = ExcelProcessor.parseHeader(ExcelProcessor.RAW_MATERIAL_PO, sheet.getRow(0));
+
             Set<String> unknownItemSet = new HashSet<>();
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 row = sheet.getRow(i);
 
-                Item item = itemMap.get(df.formatCellValue(row.getCell(0)));
+                String itemStr = df.formatCellValue(row.getCell(colIdxMap.get("item")));
+                Item item = itemMap.get(itemStr);
                 if (item == null) {
-                    String unknownItem = df.formatCellValue(row.getCell(0));
+                    String unknownItem = itemStr;
                     if (!unknownItemSet.contains(unknownItem)) {
                         System.out.println("Unknown item:" + unknownItem);
                         unknownItemSet.add(unknownItem);
                     }
                 }
-                long quantity = Integer.valueOf(df.formatCellValue(row.getCell(1)));
-                int date = Integer.valueOf(df.formatCellValue(row.getCell(2)));
-                Plant plant = plantMap.get(df.formatCellValue(row.getCell(3)));
+                long quantity = Integer.valueOf(df.formatCellValue(row.getCell(colIdxMap.get("quantity"))));
+                Date rawDate = Environment.parseDateStr(df.formatCellValue(row.getCell(colIdxMap.get("supplyDate"))));
+                int date = Integer.valueOf(targetSdf.format(rawDate));
+
+                Plant plant = plantMap.get(df.formatCellValue(row.getCell(colIdxMap.get("destinationPlant"))));
 
                 int dateIndex = TimePeriod.gap(startDate, date);
 
@@ -543,7 +582,7 @@ public class Environment {
 
             // Closing the workbook
             wb.close();
-        } catch(Exception ioe) {
+        } catch (Exception ioe) {
             ioe.printStackTrace();
         }
 
@@ -570,7 +609,7 @@ public class Environment {
         }
 
         boolean union = true;
-        while(union) {
+        while (union) {
             union = false;
 
             for (Item item1 : itemMap.values()) {
@@ -591,6 +630,7 @@ public class Environment {
 
     /**
      * Whether two items share the machine set or not?
+     *
      * @param item1 the item1.
      * @param item2 the item2.
      * @return true if they share the machine set, and false otherwise.
@@ -612,10 +652,40 @@ public class Environment {
         return false;
     }
 
+    /**
+     * Parse date string to Date object from different time format
+     *
+     * @param dateStr date string
+     * @return date object
+     */
+    private static Date parseDateStr(String dateStr) throws ParseException {
+
+        // Initialize some candidate date formats
+        List<SimpleDateFormat> candFormatList = Arrays.asList(new SimpleDateFormat("yyyyMMdd"),
+                new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"),
+                new SimpleDateFormat("yyyy/MM/dd HH:mm:ss"));
+
+        for (SimpleDateFormat sdf : candFormatList) {
+            try {
+                Date parsedDate = sdf.parse(dateStr);
+
+                // Check whether the parse is correct
+                if (sdf.format(parsedDate).equals(dateStr)) {
+                    return parsedDate;
+                }
+            } catch (ParseException e) {
+
+            }
+        }
+
+        // Throw exception when none of the candidate format can parse `dateStr`
+        throw new ParseException("Can't parse `dateStr` " + dateStr, 0);
+    }
+
     public static void main(String[] args) {
         File file = new File("data/e_vuw_test_multi_plant_01.xlsx");
 
-        Environment environment = Environment.readFromFile(file);
+//        Environment environment = Environment.readFromFile(file);
 
         System.out.println("finished");
     }

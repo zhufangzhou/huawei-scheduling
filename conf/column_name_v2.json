@@ -1,0 +1,153 @@
+{
+  "Alternate Raw Material": {},
+  "Maximum Substitution Quantity": {},
+  "Interchangeable Items": {},
+  "Fixed Component Requirement": {},
+  "Production Pairs": {
+    "Item1": "item1",
+    "Item2": "item2",
+    "Multiplier1": "multiplier1",
+    "Multiplier2": "multiplier2"
+  },
+  "Production": {
+    "Item": "item",
+    "Plant": "plant",
+    "Production_cost": "productionCost",
+    "Lead_time": "leadTime",
+    "Alt_leadtime": "altLeadTime",
+    "Lot_size": "lotSize",
+    "Min_production": "minProduction",
+    "Max_production": "maxProduction",
+    "Fixed_days_supply": "fixedDaysSupply",
+    "Previous_week_production": "previousWeekProduction",
+    "Week-to-date_production": "weekToDateProduction"
+  },
+  "Transit": {
+    "Item": "item",
+    "Source_plant": "sourcePlant",
+    "Destination_plant": "destinationPlant",
+    "Cost": "cost",
+    "Lead_time": "leadTime"
+  },
+  "Capacity": {
+    "Set": "set",
+    "Time_period": "timePeriod",
+    "Plant": "plant",
+    "Capacity Type": "capacityType",
+    "Capacity": "capacity"
+  },
+  "Rate": {
+    "Item": "item",
+    "Capacity_type": "capacityType",
+    "Rate": "rate"
+  },
+  "Demand": {
+    "Item": "item",
+    "Time_period": "timePeriod",
+    "Order_demand": "orderDemand",
+    "Forecast_demand": "forecastDemand"
+  },
+  "Time Periods": {
+    "Time_period": "timePeriod",
+    "Month": "month",
+    "Week": "week",
+    "Length": "length"
+  },
+  "Months": {
+    "Month": "month",
+    "ITO_days": "itoDays"
+  },
+  "Weeks": {
+    "Week": "week"
+  },
+  "Items": {
+    "Item": "item",
+    "Item_type": "itemType",
+    "LT_days": "ltDays",
+    "Product_category": "productCategory",
+    "Material_cost": "materialCost",
+    "Holding_cost": "holdingCost"
+  },
+  "Product Category": {
+    "Product": "productCategory",
+    "Fill_rate": "fillRate"
+  },
+  "Product Category By Month": {},
+  "Parameters": {
+    "Key": "key",
+    "Value": "value"
+  },
+  "Capacity Types": {
+    "Name": "name",
+    "Default Rate": "defaultRate"
+  },
+  "Frozen Production": {
+    "Item": "item",
+    "Plant": "plant",
+    "Time Period": "timePeriod",
+    "Quantity": "quantity"
+  },
+  "Item Sets": {
+    "Set": "set",
+    "Item": "item"
+  },
+  "Plants": {
+    "Plant": "plant",
+    "Type": "type",
+    "Locked_out_days": "lockedOutDays"
+  },
+  "Sets": {
+    "Capacity_type": "capacityType",
+    "Smoothing_factor": "smoothingFactor",
+    "Set": "set",
+    "Plant": "plant"
+  },
+  "Production Proportion": {},
+  "Plant Bom": {
+    "Assembly": "assembly",
+    "Assembly_version": "assemblyVersion",
+    "Component": "component",
+    "Component_version": "componentVersion",
+    "Quantity": "quantity",
+    "Plant": "plant",
+    "Supply_type": "supplyType"
+  },
+  "Items WIP": {
+    "Item": "item",
+    "Quantity": "quantity",
+    "Plant": "plant",
+    "Version": "version",
+    "NROHS": "nrohs",
+    "JK": "jk",
+    "Brand": "brand",
+    "WIP_name": "wipName",
+    "Avail_date": "availDate"
+  },
+  "Raw Material Po": {
+    "Item": "item",
+    "PO_num": "poNum",
+    "Quantity": "quantity",
+    "Version": "version",
+    "NROHS": "nrohs",
+    "JK": "jk",
+    "Brand": "brand",
+    "Supply_date": "supplyDate",
+    "Destination_plant": "destinationPlant"
+  },
+  "Special component": {},
+  "Special Demand": {},
+  "Item Initial Inventory": {
+    "Item": "item",
+    "Plant": "plant",
+    "Quantity": "quantity",
+    "Version": "version",
+    "NROHS": "nrohs",
+    "JK": "jk",
+    "Brand": "brand"
+  },
+  "Special BOM": {},
+  "Plant Item Type": {},
+  "Holiday Schedule": {},
+  "ITO Category": {},
+  "ITO Category By Month": {}
+}

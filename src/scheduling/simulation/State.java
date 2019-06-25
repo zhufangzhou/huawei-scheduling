@@ -9,6 +9,8 @@ import scheduling.scheduler.GreedyStaticScheduler;
 import scheduling.scheduler.Scheduler;
 
 import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -59,10 +61,11 @@ public class State {
     /**
      * Read a static problem from a file and the start date.
      * @param file the file.
+     * @param columnNameReader column name mapping json file.
      * @return the state.
      */
-    public static State staticProbFromFile(File file) {
-        Environment env = Environment.readFromFile(file);
+    public static State staticProbFromFile(File file, FileReader columnNameReader) {
+        Environment env = Environment.readFromFile(file, columnNameReader);
 
         return new State(env);
     }
@@ -211,10 +214,11 @@ public class State {
         }
     }
 
-    public static void main(String[] args) {
-        File file = new File("data/e_vuw_test_multi_plant_11.xlsx");
+    public static void main(String[] args) throws IOException {
+        File file = new File("data/e_vuw_test_multi_plant_03.xlsx");
+        FileReader columnNameReader = new FileReader("conf/column_name_v1.json");
 
-        State staticProb = State.staticProbFromFile(file);
+        State staticProb = State.staticProbFromFile(file, columnNameReader);
 
         Scheduler scheduler = new GreedyStaticScheduler();
         long start = System.currentTimeMillis();

@@ -3,8 +3,11 @@ package io;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.poi.xssf.usermodel.*;
 import org.apache.poi.ss.usermodel.*;
+import org.json.JSONObject;
 
 import java.io.*;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ExcelProcessor {
 
@@ -26,6 +29,62 @@ public class ExcelProcessor {
     public static final String WORK_IN_PROCESS = "Items WIP";
     public static final String RAW_MATERIAL_PO = "Raw Material Po";
     public static final String INIT_INVENTORY = "Item Initial Inventory";
+
+    // Map column name in different sheets predefined name
+    public static Map<String, Map<String, String>> totColumnNameMap = null;
+
+    /**
+     * Initialize the column name mapping
+     *
+     * @param columnNameReader column name configuration file Reader
+     * @throws IOException
+     */
+    public static void initColNames(FileReader columnNameReader) throws IOException {
+        // Read json file to construct JSONObject
+        BufferedReader br = new BufferedReader(columnNameReader);
+        StringBuffer sb = new StringBuffer();
+        String line;
+        while ((line = br.readLine()) != null) {
+            sb.append(line);
+        }
+        JSONObject obj = new JSONObject(sb.toString());
+
+        ExcelProcessor.totColumnNameMap = new HashMap<>();
+        // iterate over different sheets
+        for (String sheetName : obj.keySet()) {
+            JSONObject sheetObj = obj.getJSONObject(sheetName);
+            Map<String, String> columnNameMap = new HashMap<>();
+            // iterate over sheet columns
+            for (String rawColumnName : sheetObj.keySet()) {
+                columnNameMap.put(rawColumnName, sheetObj.getString(rawColumnName));
+            }
+            ExcelProcessor.totColumnNameMap.put(sheetName, columnNameMap);
+        }
+
+    }
+
+    public static Map parseHeader(String sheetName, Row row) {
+        Map<String, Integer> colIdxMap = new HashMap<>();
+
+        if (ExcelProcessor.totColumnNameMap == null) {
+            throw new RuntimeException("You should call initColNames first.");
+        }
+
+        int minColIdx = row.getFirstCellNum();
+        int maxColIdx = row.getLastCellNum();
+
+        DataFormatter df = new DataFormatter();
+
+        Map<String, String> columnNameMap = ExcelProcessor.totColumnNameMap.get(sheetName);
+
+        for (int i = minColIdx; i <= maxColIdx; i++) {
+            String colName = df.formatCellValue(row.getCell(i));
+
+            colIdxMap.put(columnNameMap.get(colName), i);
+        }
+
+        return colIdxMap;
+    }
 
 
 //    public static void guessTomorrowInput(String todayFile,
