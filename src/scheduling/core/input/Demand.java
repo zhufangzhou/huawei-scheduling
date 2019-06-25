@@ -15,6 +15,7 @@ public abstract class Demand implements Comparable<Demand> {
     protected int dateId;
     protected Item item;
     protected long quantity;
+    protected double type;
 
     protected double priority;
 
@@ -89,10 +90,10 @@ public abstract class Demand implements Comparable<Demand> {
     @Override
     public int compareTo(Demand o) {
         // compare the requested date id
-        if (dateId < o.dateId)
+        if (priority < o.priority)
             return -1;
 
-        if (dateId > o.dateId)
+        if (priority > o.priority)
             return 1;
 
         return item.compareTo(o.item);
