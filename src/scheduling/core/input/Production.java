@@ -141,9 +141,9 @@ public class Production {
      * @param maxQuantity the max quantity.
      * @return the number of lots.
      */
-    public long lots(long quantity, long maxQuantity) {
+    public long lots(double quantity, long maxQuantity) {
         // lots1 is the minimum lots to provide at least quantity
-        long lots = (long)(Math.ceil(1.0*quantity/lotSize));
+        long lots = (long)(Math.ceil(quantity/lotSize));
 
         if (lots > maxQuantity/lotSize)
             lots--;

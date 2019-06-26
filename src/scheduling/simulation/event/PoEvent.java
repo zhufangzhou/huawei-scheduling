@@ -12,9 +12,9 @@ import java.util.Map;
 public class PoEvent extends Event {
     private Item item;
     private Plant plant;
-    private long quantity;
+    private double quantity;
 
-    public PoEvent(int dateId, Item item, Plant plant, long quantity) {
+    public PoEvent(int dateId, Item item, Plant plant, double quantity) {
         super(dateId);
         this.item = item;
         this.plant = plant;
@@ -29,7 +29,7 @@ public class PoEvent extends Event {
         return plant;
     }
 
-    public long getQuantity() {
+    public double getQuantity() {
         return quantity;
     }
 

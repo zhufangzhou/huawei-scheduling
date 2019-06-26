@@ -14,12 +14,12 @@ import scheduling.core.SupplyChain;
 public abstract class Demand implements Comparable<Demand> {
     protected int dateId;
     protected Item item;
-    protected long quantity;
+    protected double quantity;
     protected double type;
 
     protected double priority;
 
-    public Demand(int dateId, Item item, long quantity) {
+    public Demand(int dateId, Item item, double quantity) {
         this.dateId = dateId;
         this.item = item;
         this.quantity = quantity;
@@ -41,19 +41,19 @@ public abstract class Demand implements Comparable<Demand> {
         this.item = item;
     }
 
-    public long getQuantity() {
+    public double getQuantity() {
         return quantity;
     }
 
-    public void setQuantity(long quantity) {
+    public void setQuantity(double quantity) {
         this.quantity = quantity;
     }
 
-    public void addQuantity(long quantity) {
+    public void addQuantity(double quantity) {
         this.quantity += quantity;
     }
 
-    public void removeQuantity(long quantity) {
+    public void removeQuantity(double quantity) {
         this.quantity -= quantity;
     }
 
@@ -80,7 +80,7 @@ public abstract class Demand implements Comparable<Demand> {
      * @param suppQuantity the supplied quantity.
      * @param schedule the schedule to be updated.
      */
-    public abstract void supplied(SupplyChain supplyChain, long suppQuantity, Schedule schedule);
+    public abstract void supplied(SupplyChain supplyChain, double suppQuantity, Schedule schedule);
 
     @Override
     public String toString() {

@@ -7,45 +7,45 @@ package scheduling.core.input;
  * The two can be different because some inventory has been allocated to some future supplies.
  */
 public class Inventory {
-    private long total;
-    private long free;
+    private double total;
+    private double free;
 
-    public Inventory(long total, long free) {
+    public Inventory(double total, double free) {
         this.total = total;
         this.free = free;
     }
 
-    public long getTotal() {
+    public double getTotal() {
         return total;
     }
 
-    public void setTotal(long total) {
+    public void setTotal(double total) {
         this.total = total;
     }
 
-    public long getFree() {
+    public double getFree() {
         return free;
     }
 
-    public void setFree(long free) {
+    public void setFree(double free) {
         this.free = free;
     }
 
-    public void add(long quantity) {
+    public void add(double quantity) {
         total += quantity;
         free += quantity;
     }
 
-    public void remove(long quantity) {
+    public void remove(double quantity) {
         total -= quantity;
         free -= quantity;
     }
 
-    public void addFree(long quantity) {
+    public void addFree(double quantity) {
         free += quantity;
     }
 
-    public void removeFree(long quantity) {
+    public void removeFree(double quantity) {
         free -= quantity;
     }
 

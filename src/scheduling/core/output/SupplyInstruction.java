@@ -6,9 +6,9 @@ import scheduling.core.input.Plant;
 
 public class SupplyInstruction extends Instruction {
     private Pair<Item, Plant> supply;
-    private long quantity;
+    private double quantity;
 
-    public SupplyInstruction(int startDate, int endDate, Item item, Pair<Item, Plant> supply, long quantity) {
+    public SupplyInstruction(int startDate, int endDate, Item item, Pair<Item, Plant> supply, double quantity) {
         super(startDate, endDate, item);
         this.supply = supply;
         this.quantity = quantity;
@@ -22,11 +22,11 @@ public class SupplyInstruction extends Instruction {
         this.supply = supply;
     }
 
-    public long getQuantity() {
+    public double getQuantity() {
         return quantity;
     }
 
-    public void setQuantity(long quantity) {
+    public void setQuantity(double quantity) {
         this.quantity = quantity;
     }
 

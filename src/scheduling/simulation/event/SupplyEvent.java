@@ -32,7 +32,7 @@ public class SupplyEvent extends Event {
     public void trigger(State state) {
         Item item = instruction.getItem();
         Plant plant = instruction.getSupply().getSecond();
-        long quantity = instruction.getQuantity();
+        double quantity = instruction.getQuantity();
 
 //        Map<Integer, Integer> itemDelayMap = state.getDelayMap().get(item);
 //        int oldDelay = itemDelayMap.get(date);

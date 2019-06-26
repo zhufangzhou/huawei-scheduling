@@ -24,16 +24,16 @@ public class Schedule {
     private Map<Integer, Map<Production, ProductionInstruction>> productionSchedule;
     private Map<Integer, Map<Transit, TransitInstruction>> transitSchedule;
     private Map<Integer, Map<Pair<Item, Plant>, SupplyInstruction>> supplySchedule;
-    private Map<SupplyChain, Long> supplyChainMap;
+    private Map<SupplyChain, Double> supplyChainMap;
 
     private Map<Integer, Map<Item, Map<Plant, Inventory>>> inventoryMap; // the inventory of each item at each plant in each day
-    private Map<Integer, Map<Item, Long>> supplyMap;
-    private Map<Integer, Map<Item, Long>> accOrderDemMap; // accumulated order demand each day
+    private Map<Integer, Map<Item, Double>> supplyMap;
+    private Map<Integer, Map<Item, Double>> accOrderDemMap; // accumulated order demand each day
 
     private double holdingCost;
     private double productionCost;
     private double transitCost;
-    private long totalDelay;
+    private double totalDelay;
 
     private double fillRate; // the fill rate over the scheduling period.
 
@@ -53,7 +53,7 @@ public class Schedule {
         holdingCost = 0d;
         productionCost = 0d;
         transitCost = 0d;
-        totalDelay = 0l;
+        totalDelay = 0d;
     }
 
     public State getState() {
@@ -104,11 +104,11 @@ public class Schedule {
         this.supplySchedule = supplySchedule;
     }
 
-    public Map<SupplyChain, Long> getSupplyChainMap() {
+    public Map<SupplyChain, Double> getSupplyChainMap() {
         return supplyChainMap;
     }
 
-    public void setSupplyChainMap(Map<SupplyChain, Long> supplyChainMap) {
+    public void setSupplyChainMap(Map<SupplyChain, Double> supplyChainMap) {
         this.supplyChainMap = supplyChainMap;
     }
 
@@ -120,19 +120,19 @@ public class Schedule {
         this.inventoryMap = inventoryMap;
     }
 
-    public Map<Integer, Map<Item, Long>> getSupplyMap() {
+    public Map<Integer, Map<Item, Double>> getSupplyMap() {
         return supplyMap;
     }
 
-    public void setSupplyMap(Map<Integer, Map<Item, Long>> supplyMap) {
+    public void setSupplyMap(Map<Integer, Map<Item, Double>> supplyMap) {
         this.supplyMap = supplyMap;
     }
 
-    public Map<Integer, Map<Item, Long>> getAccOrderDemMap() {
+    public Map<Integer, Map<Item, Double>> getAccOrderDemMap() {
         return accOrderDemMap;
     }
 
-    public void setAccOrderDemMap(Map<Integer, Map<Item, Long>> accOrderDemMap) {
+    public void setAccOrderDemMap(Map<Integer, Map<Item, Double>> accOrderDemMap) {
         this.accOrderDemMap = accOrderDemMap;
     }
 
@@ -160,11 +160,11 @@ public class Schedule {
         this.transitCost = transitCost;
     }
 
-    public long getTotalDelay() {
+    public double getTotalDelay() {
         return totalDelay;
     }
 
-    public void setTotalDelay(long totalDelay) {
+    public void setTotalDelay(double totalDelay) {
         this.totalDelay = totalDelay;
     }
 
@@ -184,13 +184,13 @@ public class Schedule {
         double denominator = 0d;
 
         // the delayed demand map, initially empty
-        Map<Item, Long> delayedDemMap = new HashMap<>();
+        Map<Item, Double> delayedDemMap = new HashMap<>();
 
         for (int dateId = startDateId; dateId < endDateId; dateId++) {
             // only consider the item with (order + forecast > 0)
             // get their order demand and forecast demand
-            Map<Item, Long> orderDemMap = new HashMap<>();
-            Map<Item, Long> forecastDemMap = new HashMap<>();
+            Map<Item, Double> orderDemMap = new HashMap<>();
+            Map<Item, Double> forecastDemMap = new HashMap<>();
             if (state.getOrderDemMap().containsKey(dateId)) {
                 for (Item item : state.getOrderDemMap().get(dateId)) {
                     orderDemMap.put(item, item.getOrderDemandMap().get(dateId));
@@ -199,7 +199,7 @@ public class Schedule {
                         if (state.getForecastDemMap().get(dateId).contains(item))
                             continue;
 
-                        forecastDemMap.put(item, 0l);
+                        forecastDemMap.put(item, 0d);
                     }
                 }
             }
@@ -212,23 +212,23 @@ public class Schedule {
                         if (state.getOrderDemMap().get(dateId).contains(item))
                             continue;
 
-                        orderDemMap.put(item, 0l);
+                        orderDemMap.put(item, 0d);
                     }
                 }
             }
 
-            Map<Item, Long> dailySupplyMap = supplyMap.get(dateId);
+            Map<Item, Double> dailySupplyMap = supplyMap.get(dateId);
 
             for (Item item : orderDemMap.keySet()) {
-                long totalDemand = orderDemMap.get(item)+forecastDemMap.get(item);
+                double totalDemand = orderDemMap.get(item)+forecastDemMap.get(item);
 
                 // get the delayed demand before supply
-                long delayed = 0;
+                double delayed = 0;
                 if (delayedDemMap.containsKey(item))
                     delayed = delayedDemMap.get(item);
 
                 // get the supply
-                long supply = 0;
+                double supply = 0;
                 if (dailySupplyMap.containsKey(item))
                     supply = dailySupplyMap.get(item);
 
@@ -241,7 +241,7 @@ public class Schedule {
                 denominator ++;
 
                 // update the delayed demand
-                long newDelay = orderDemMap.get(item)+delayed-supply;
+                double newDelay = orderDemMap.get(item)+delayed-supply;
                 if (newDelay < 0)
                     newDelay = 0;
                 delayedDemMap.put(item, newDelay);
@@ -280,7 +280,7 @@ public class Schedule {
                 }
 
                 for (Plant plant : item.getInitInventoryMap().keySet()) {
-                    long quantity = item.getInitInventoryMap().get(plant);
+                    double quantity = item.getInitInventoryMap().get(plant);
                     Inventory inventory = map.get(plant);
                     inventory.add(quantity);
                 }
@@ -293,13 +293,13 @@ public class Schedule {
 
         // add inventory by Raw Material Po
         for (Plant plant : state.getEnv().getPlantMap().values()) {
-            Map<Integer, Map<Item, Long>> plantPoMap = plant.getRawMaterialPoMap();
+            Map<Integer, Map<Item, Double>> plantPoMap = plant.getRawMaterialPoMap();
 
             for (int dateId : plantPoMap.keySet()) {
-                Map<Item, Long> dailyPoMap = plantPoMap.get(dateId);
+                Map<Item, Double> dailyPoMap = plantPoMap.get(dateId);
 
                 for (Item item : dailyPoMap.keySet()) {
-                    long quantity = dailyPoMap.get(item);
+                    double quantity = dailyPoMap.get(item);
 
                     addInventory(dateId, item, plant, quantity);
                 }
@@ -308,13 +308,13 @@ public class Schedule {
 
         // add inventory by the work-in-process
         for (Plant plant : state.getEnv().getPlantMap().values()) {
-            Map<Integer, Map<Item, Long>> plantWipMap = plant.getWorkInProcessMap();
+            Map<Integer, Map<Item, Double>> plantWipMap = plant.getWorkInProcessMap();
 
             for (int dateId : plantWipMap.keySet()) {
-                Map<Item, Long> dailyWipMap = plantWipMap.get(dateId);
+                Map<Item, Double> dailyWipMap = plantWipMap.get(dateId);
 
                 for (Item item : dailyWipMap.keySet()) {
-                    long quantity = dailyWipMap.get(item);
+                    double quantity = dailyWipMap.get(item);
 
                     addInventory(dateId, item, plant, quantity);
                 }
@@ -323,7 +323,7 @@ public class Schedule {
 
         // initialise the supplies
         for (int dateId = startDateId; dateId < endDateId; dateId++) {
-            Map<Item, Long> dailySupply = new HashMap<>();
+            Map<Item, Double> dailySupply = new HashMap<>();
             supplyMap.put(dateId, dailySupply);
         }
 
@@ -335,7 +335,7 @@ public class Schedule {
                 for (Item item : dailyOrderDem) {
                     // for the ordered demands, the supply may be any date afterwards
                     for (int d = dateId; d < endDateId; d++) {
-                        supplyMap.get(d).put(item, 0l);
+                        supplyMap.get(d).put(item, 0d);
                     }
                 }
             }
@@ -343,23 +343,23 @@ public class Schedule {
             if (dailyForecastDem != null) {
                 for (Item item : dailyForecastDem) {
                     // for the forecast demands, the supply is only need for that day
-                    supplyMap.get(dateId).put(item, 0l);
+                    supplyMap.get(dateId).put(item, 0d);
                 }
             }
         }
 
         // initialise the accumulated order demand map
         // the accumulated order demand adds up all the leftover order demands
-        Map<Item, Long> leftover = new HashMap<>();
+        Map<Item, Double> leftover = new HashMap<>();
         for (int dateId = startDateId; dateId < endDateId; dateId++) {
-            Map<Item, Long> dailyAccOrderDem = new HashMap<>(leftover);
+            Map<Item, Double> dailyAccOrderDem = new HashMap<>(leftover);
 
             List<Item> dailyOrderDem = state.getOrderDemMap().get(dateId);
 
             if (dailyOrderDem != null) {
                 for (Item item : dailyOrderDem) {
                     if (dailyAccOrderDem.containsKey(item)) {
-                        long old = dailyAccOrderDem.get(item);
+                        double old = dailyAccOrderDem.get(item);
                         dailyAccOrderDem.put(item, old+item.getOrderDemandMap().get(dateId));
                     } else {
                         dailyAccOrderDem.put(item, item.getOrderDemandMap().get(dateId));
@@ -400,7 +400,7 @@ public class Schedule {
         // calculate the holding cost by summing up for all the days
         for (int dateId = startDateId; dateId < endDateId; dateId++) {
             for (Item item : inventoryMap.get(dateId).keySet()) {
-                long totalInventory = 0;
+                double totalInventory = 0;
 
                 for (Plant plant : inventoryMap.get(dateId).get(item).keySet()) {
                     totalInventory += inventoryMap.get(dateId).get(item).get(plant).getTotal();
@@ -414,7 +414,7 @@ public class Schedule {
         for (int dateId = startDateId; dateId < endDateId; dateId++) {
             for (Item item : accOrderDemMap.get(dateId).keySet()) {
 //                System.out.print(accOrderDemMap.get(dateId).get(item) + " ");
-//                long old = totalDelay;
+//                double old = totalDelay;
                 totalDelay += accOrderDemMap.get(dateId).get(item);
 //                System.out.println(old + " + " + accOrderDemMap.get(dateId).get(item) + " = " + totalDelay);
             }
@@ -424,7 +424,7 @@ public class Schedule {
         for (int dateId : state.getForecastDemMap().keySet()) {
             for (Item item : state.getForecastDemMap().get(dateId)) {
 //                System.out.print(item.getForecastDemandMap().get(dateId) + " ");
-//                long old = totalDelay;
+//                double old = totalDelay;
                 totalDelay += item.getForecastDemandMap().get(dateId);
 //                System.out.println(old + " + " + item.getForecastDemandMap().get(dateId) + " = " + totalDelay);
             }
@@ -441,7 +441,7 @@ public class Schedule {
      * @param plant the plant.
      * @param quantity the quantity to be added.
      */
-    public void addInventory(int dateId, Item item, Plant plant, long quantity) {
+    public void addInventory(int dateId, Item item, Plant plant, double quantity) {
         for (int d = dateId; d < endDateId; d++) {
             Map<Plant, Inventory> itemInventoryMap = inventoryMap.get(d).get(item);
 
@@ -451,7 +451,7 @@ public class Schedule {
 
         // set the free inventories of all previous days to the new free inventory
         // if a previous day's inventory is smaller than the free, the stop there.
-        long free = inventoryMap.get(dateId).get(item).get(plant).getFree();
+        double free = inventoryMap.get(dateId).get(item).get(plant).getFree();
         for (int d = dateId-1; d >= startDateId; d--) {
             Inventory inventory = inventoryMap.get(d).get(item).get(plant);
 
@@ -474,7 +474,7 @@ public class Schedule {
      * @param plant the plant.
      * @param quantity the quantity to be removed.
      */
-    public void removeInventory(int dateId, Item item, Plant plant, long quantity) {
+    public void removeInventory(int dateId, Item item, Plant plant, double quantity) {
         for (int d = dateId; d < endDateId; d++) {
             Map<Plant, Inventory> itemInventoryMap = inventoryMap.get(d).get(item);
 
@@ -484,7 +484,7 @@ public class Schedule {
 
         // set the free inventories of all previous days to the new free inventory
         // if the original free inventory is larger, then it will set to the new free.
-        long free = inventoryMap.get(dateId).get(item).get(plant).getFree();
+        double free = inventoryMap.get(dateId).get(item).get(plant).getFree();
         for (int d = dateId-1; d >= startDateId; d--) {
             Inventory inventory = inventoryMap.get(d).get(item).get(plant);
 
@@ -505,7 +505,7 @@ public class Schedule {
      * @param supply the supply.
      * @param quantity the quantity to be added.
      */
-    public void addOrderSupply(int dateId, Pair<Item, Plant> supply, long quantity) {
+    public void addOrderSupply(int dateId, Pair<Item, Plant> supply, double quantity) {
         Item item = supply.getFirst();
         Plant plant = supply.getSecond();
 
@@ -513,7 +513,7 @@ public class Schedule {
         Map<Pair<Item, Plant>, SupplyInstruction> dailySupplySchedule = supplySchedule.get(dateId);
         if (dailySupplySchedule.containsKey(supply)) {
             SupplyInstruction instruction = dailySupplySchedule.get(supply);
-            long old = instruction.getQuantity();
+            double old = instruction.getQuantity();
             instruction.setQuantity(old+quantity);
         } else {
             SupplyInstruction instruction = new SupplyInstruction(dateId, dateId, item, supply, quantity);
@@ -524,26 +524,26 @@ public class Schedule {
         removeInventory(dateId, item, plant, quantity);
 
         // update the supply map
-        Map<Item, Long> itemSupplyMap = supplyMap.get(dateId);
-        long old = itemSupplyMap.get(item);
+        Map<Item, Double> itemSupplyMap = supplyMap.get(dateId);
+        double old = itemSupplyMap.get(item);
         itemSupplyMap.put(item, old+quantity);
 
         // decrease the accumulated order demand and total delay from this day on
         // if the future demand is supplied, then revert the supply
         for (int d = dateId; d < endDateId; d++) {
-            Map<Item, Long> dailyAccOrderDem = accOrderDemMap.get(d);
+            Map<Item, Double> dailyAccOrderDem = accOrderDemMap.get(d);
             old = dailyAccOrderDem.get(item);
             dailyAccOrderDem.put(item, old-quantity);
 
             if (old < quantity) {
-                long reverted = quantity-old;
+                double reverted = quantity-old;
                 // find the corresponding supply instruction
                 Map<Pair<Item, Plant>, SupplyInstruction> futureSupplySchedule = supplySchedule.get(d);
                 for (Pair<Item, Plant> pair : futureSupplySchedule.keySet()) {
                     if (pair.getFirst().equals(item)) {
                         // reduce the supply from this plant
                         SupplyInstruction revertedInstruction = futureSupplySchedule.get(pair);
-                        long revertedFromPlant = revertedInstruction.getQuantity();
+                        double revertedFromPlant = revertedInstruction.getQuantity();
 
                         if (revertedFromPlant > reverted)
                             revertedFromPlant = reverted;
@@ -568,12 +568,12 @@ public class Schedule {
      * @param supply the supply.
      * @param quantity the quantity to be removed.
      */
-    public void removeOrderSupply(int dateId, Pair<Item, Plant> supply, long quantity) {
+    public void removeOrderSupply(int dateId, Pair<Item, Plant> supply, double quantity) {
         SupplyInstruction instruction = supplySchedule.get(dateId).get(supply);
         Item item = supply.getFirst();
         Plant plant = supply.getSecond();
 
-        long old = instruction.getQuantity();
+        double old = instruction.getQuantity();
         if (old == quantity) {
             supplySchedule.remove(instruction);
         }
@@ -585,13 +585,13 @@ public class Schedule {
         addInventory(dateId, item, plant, quantity);
 
         // update supply map
-        Map<Item, Long> itemSupplyMap = supplyMap.get(dateId);
+        Map<Item, Double> itemSupplyMap = supplyMap.get(dateId);
         old = itemSupplyMap.get(item);
         itemSupplyMap.put(item, old-quantity);
 
         // increase the accumulated order demand and total delay from this day on
         for (int d = dateId; d < endDateId; d++) {
-            Map<Item, Long> dailyAccOrderDem = accOrderDemMap.get(d);
+            Map<Item, Double> dailyAccOrderDem = accOrderDemMap.get(d);
 
             old = dailyAccOrderDem.get(item);
             dailyAccOrderDem.put(item, old+quantity);
@@ -606,7 +606,7 @@ public class Schedule {
      * @param supply the supply.
      * @param quantity the quantity.
      */
-    public void addForecastSupply(int dateId, Pair<Item, Plant> supply, long quantity) {
+    public void addForecastSupply(int dateId, Pair<Item, Plant> supply, double quantity) {
         Item item = supply.getFirst();
         Plant plant = supply.getSecond();
 
@@ -614,7 +614,7 @@ public class Schedule {
         Map<Pair<Item, Plant>, SupplyInstruction> dailySupplySchedule = supplySchedule.get(dateId);
         if (dailySupplySchedule.containsKey(supply)) {
             SupplyInstruction instruction = dailySupplySchedule.get(supply);
-            long old = instruction.getQuantity();
+            double old = instruction.getQuantity();
             instruction.setQuantity(old+quantity);
         } else {
             SupplyInstruction instruction = new SupplyInstruction(dateId, dateId, item, supply, quantity);
@@ -625,8 +625,8 @@ public class Schedule {
         removeInventory(dateId, item, plant, quantity);
 
         // update the supply map
-        Map<Item, Long> itemSupplyMap = supplyMap.get(dateId);
-        long old = itemSupplyMap.get(item);
+        Map<Item, Double> itemSupplyMap = supplyMap.get(dateId);
+        double old = itemSupplyMap.get(item);
         itemSupplyMap.put(item, old+quantity);
 
         // decrease the total delay by the quantity
@@ -639,12 +639,12 @@ public class Schedule {
      * @param supply the supply.
      * @param quantity the quantity.
      */
-    public void removeForecastSupply(int dateId, Pair<Item, Plant> supply, long quantity) {
+    public void removeForecastSupply(int dateId, Pair<Item, Plant> supply, double quantity) {
         SupplyInstruction instruction = supplySchedule.get(dateId).get(supply);
         Item item = supply.getFirst();
         Plant plant = supply.getSecond();
 
-        long old = instruction.getQuantity();
+        double old = instruction.getQuantity();
         if (old == quantity) {
             supplySchedule.remove(instruction);
         }
@@ -656,7 +656,7 @@ public class Schedule {
         addInventory(dateId, item, plant, quantity);
 
         // update the supply map
-        Map<Item, Long> itemSupplyMap = supplyMap.get(dateId);
+        Map<Item, Double> itemSupplyMap = supplyMap.get(dateId);
         old = itemSupplyMap.get(item);
         itemSupplyMap.put(item, old-quantity);
 
@@ -671,21 +671,21 @@ public class Schedule {
      * @param dateId the date id.
      */
     public void supplyOrderDemand(Item item, int dateId) {
-        Map<Item, Long> dailyAccOrderDem = accOrderDemMap.get(dateId);
+        Map<Item, Double> dailyAccOrderDem = accOrderDemMap.get(dateId);
 
-        long itemOrderDemand = dailyAccOrderDem.get(item);
-        long remaining = itemOrderDemand;
+        double itemOrderDemand = dailyAccOrderDem.get(item);
+        double remaining = itemOrderDemand;
 
         // check the current inventory of the item in different plants
         Map<Plant, Inventory> itemInventoryMap = inventoryMap.get(dateId).get(item);
         for (Plant plant : itemInventoryMap.keySet()) {
-            long inventory = itemInventoryMap.get(plant).getFree();
+            double inventory = itemInventoryMap.get(plant).getFree();
 
             if (inventory == 0)
                 continue;
 
             // supply from this plant until the order is cleaned
-            long supplied = inventory;
+            double supplied = inventory;
             if (supplied > remaining)
                 supplied = remaining;
 
@@ -707,19 +707,19 @@ public class Schedule {
      * @param dateId the date id.
      */
     public void supplyForecastDemand(Item item, int dateId) {
-        long itemForecastDemand = item.getForecastDemandMap().get(dateId);
-        long remaining = itemForecastDemand;
+        double itemForecastDemand = item.getForecastDemandMap().get(dateId);
+        double remaining = itemForecastDemand;
 
         // check the current inventory of the item in different plants
         Map<Plant, Inventory> itemInventoryMap = inventoryMap.get(dateId).get(item);
         for (Plant plant : itemInventoryMap.keySet()) {
-            long inventory = itemInventoryMap.get(plant).getFree();
+            double inventory = itemInventoryMap.get(plant).getFree();
 
             if (inventory == 0)
                 continue;
 
             // supply from this plant until the order is cleaned
-            long supplied = inventory;
+            double supplied = inventory;
             if (supplied > remaining)
                 supplied = remaining;
 
@@ -745,7 +745,7 @@ public class Schedule {
         int prodEndDate = prodStartDate+production.getLeadTime();
         Item item = production.getItem();
         Plant plant = production.getPlant();
-        long quantity = production.getLotSize()*lots;
+        double quantity = production.getLotSize()*lots;
 
         // add the instruction
         Map<Production, ProductionInstruction> dailyProdSchedule = productionSchedule.get(dateId);
@@ -765,7 +765,7 @@ public class Schedule {
         // remove the inventory of the boms when the production is finished
         for (BomComponent bomComponent : production.getBom()) {
             Item component = bomComponent.getMaterial();
-            long bomQuantity = quantity*bomComponent.getQuantity();
+            double bomQuantity = quantity*bomComponent.getQuantity();
             removeInventory(prodEndDate, component, plant, bomQuantity);
 
             // add the holding cost of the bom during the production
@@ -785,7 +785,7 @@ public class Schedule {
      * @param transit the transit.
      * @param quantity the quantity.
      */
-    public void addTransit(int dateId, Transit transit, long quantity) {
+    public void addTransit(int dateId, Transit transit, double quantity) {
         int tranStartDate = dateId;
         int tranEndDate = tranStartDate+transit.getLeadTime();
         Item item = transit.getItem();
@@ -796,7 +796,7 @@ public class Schedule {
         Map<Transit, TransitInstruction> dailyTranSchedule = transitSchedule.get(dateId);
         if (dailyTranSchedule.containsKey(transit)) {
             TransitInstruction instruction = dailyTranSchedule.get(transit);
-            long old = instruction.getQuantity();
+            double old = instruction.getQuantity();
             instruction.setQuantity(old+quantity);
         } else {
             TransitInstruction instruction =

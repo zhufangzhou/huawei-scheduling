@@ -6,10 +6,10 @@ package scheduling.core.input;
 
 public class BomComponent {
     private Item material;
-    private int quantity;
+    private double quantity;
     private SupplyType supplyType;
 
-    public BomComponent(Item material, int quantity, SupplyType supplyType) {
+    public BomComponent(Item material, double quantity, SupplyType supplyType) {
         this.material = material;
         this.quantity = quantity;
         this.supplyType = supplyType;
@@ -19,7 +19,7 @@ public class BomComponent {
         return material;
     }
 
-    public int getQuantity() {
+    public double getQuantity() {
         return quantity;
     }
 

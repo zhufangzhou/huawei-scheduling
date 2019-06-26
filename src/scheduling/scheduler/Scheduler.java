@@ -38,7 +38,7 @@ public abstract class Scheduler {
 //        if (demand.getDateId() == 59 && demand.getItem().toString().equals("243"))
 //            System.out.println("debug Schedule.java");
 
-        long left = demand.getQuantity();
+        double left = demand.getQuantity();
         int nextDateId = demand.getDateId();
         while (left > 0) {
             SupplyChain nextChain = nextSupplyChain(nextDateId, demand.latestSupplyDate(schedule), demand.getItem(), schedule, state, chainRule, chainTB);
@@ -49,7 +49,7 @@ public abstract class Scheduler {
 //            if (nextChain.getLength() > 1)
 //                System.out.println("long chain found");
 
-            long suppQuantity = nextChain.getMaxQuantity();
+            double suppQuantity = nextChain.getMaxQuantity();
             if (suppQuantity > left)
                 suppQuantity = left;
 

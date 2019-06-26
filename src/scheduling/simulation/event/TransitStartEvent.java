@@ -33,7 +33,7 @@ public class TransitStartEvent extends Event {
         Item item = instruction.getItem();
         Plant fromPlant = instruction.getTransit().getFromPlant();
         Plant toPlant = instruction.getTransit().getToPlant();
-        long quantity = instruction.getQuantity();
+        double quantity = instruction.getQuantity();
 
 //        state.reduceInventory(item, fromPlant, quantity);
 //

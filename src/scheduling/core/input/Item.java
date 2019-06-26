@@ -19,10 +19,10 @@ public class Item implements Comparable<Item> {
     private Map<Plant, Production> productionMap;
     private List<ProportionConstraint> proportionConstraints;
     private Map<Plant, List<MachineSet>> machineMap; // the machine sets in each plant occupied by producing this item
-    private Map<Integer, Long> orderDemandMap;
-    private Map<Integer, Long> forecastDemandMap;
-    private Map<Plant, Long> initInventoryMap;
-    private Map<Plant, Map<Integer, Long>> frozenProductionMap;
+    private Map<Integer, Double> orderDemandMap;
+    private Map<Integer, Double> forecastDemandMap;
+    private Map<Plant, Double> initInventoryMap;
+    private Map<Plant, Map<Integer, Double>> frozenProductionMap;
 
     private int minProductionLeadTime;
     private Set<Plant> plants; // the plants that can hold the item
@@ -94,19 +94,19 @@ public class Item implements Comparable<Item> {
         return machineMap;
     }
 
-    public Map<Integer, Long> getOrderDemandMap() {
+    public Map<Integer, Double> getOrderDemandMap() {
         return orderDemandMap;
     }
 
-    public Map<Integer, Long> getForecastDemandMap() {
+    public Map<Integer, Double> getForecastDemandMap() {
         return forecastDemandMap;
     }
 
-    public Map<Plant, Long> getInitInventoryMap() {
+    public Map<Plant, Double> getInitInventoryMap() {
         return initInventoryMap;
     }
 
-    public Map<Plant, Map<Integer, Long>> getFrozenProductionMap() {
+    public Map<Plant, Map<Integer, Double>> getFrozenProductionMap() {
         return frozenProductionMap;
     }
 
@@ -236,7 +236,7 @@ public class Item implements Comparable<Item> {
         }
     }
 
-    public void addCapacity(Plant plant, int dateId, long quantity) {
+    public void addCapacity(Plant plant, int dateId, double quantity) {
         List<MachineSet> machineSets = machineMap.get(plant);
 
         for (MachineSet machineSet : machineSets) {
@@ -246,7 +246,7 @@ public class Item implements Comparable<Item> {
         }
     }
 
-    public void reduceCapacity(Plant plant, int dateId, long quantity) {
+    public void reduceCapacity(Plant plant, int dateId, double quantity) {
         List<MachineSet> machineSets = machineMap.get(plant);
 
         for (MachineSet machineSet : machineSets) {

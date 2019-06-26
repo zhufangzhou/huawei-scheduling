@@ -5,7 +5,7 @@ import scheduling.core.Schedule;
 import scheduling.core.SupplyChain;
 
 public class ForecastDemand extends Demand {
-    public ForecastDemand(int dateId, Item item, long quantity) {
+    public ForecastDemand(int dateId, Item item, double quantity) {
         super(dateId, item, quantity);
         this.type = 0;
         this.priority = type+dateId;
@@ -17,7 +17,7 @@ public class ForecastDemand extends Demand {
     }
 
     @Override
-    public void supplied(SupplyChain supplyChain, long suppQuantity, Schedule schedule) {
+    public void supplied(SupplyChain supplyChain, double suppQuantity, Schedule schedule) {
         int dateId = supplyChain.getDateId();
         Item item = supplyChain.getItem();
         Plant plant = supplyChain.getPlant();

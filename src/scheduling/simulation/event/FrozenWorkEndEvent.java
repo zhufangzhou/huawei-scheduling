@@ -12,9 +12,9 @@ import scheduling.simulation.State;
 public class FrozenWorkEndEvent extends Event {
     private Item item;
     private Plant plant;
-    private long quantity;
+    private double quantity;
 
-    public FrozenWorkEndEvent(int dateId, Item item, Plant plant, long quantity) {
+    public FrozenWorkEndEvent(int dateId, Item item, Plant plant, double quantity) {
         super(dateId);
         this.item = item;
         this.plant = plant;

@@ -213,7 +213,7 @@ public class State {
     }
 
     public static void main(String[] args) {
-        File file = new File("data/e_vuw_test_multi_plant_31.xlsx");
+        File file = new File("data/e_vuw_test_multi_plant_15.xlsx");
 
         State staticProb = State.staticProbFromFile(file);
 

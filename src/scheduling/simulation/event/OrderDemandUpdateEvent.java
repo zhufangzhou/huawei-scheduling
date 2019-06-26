@@ -12,9 +12,9 @@ import java.util.Map;
 public class OrderDemandUpdateEvent extends Event {
     private Item item;
     private int dueDateId;
-    private long demand;
+    private double demand;
 
-    public OrderDemandUpdateEvent(int dateId, Item item, int dueDateId, long demand) {
+    public OrderDemandUpdateEvent(int dateId, Item item, int dueDateId, double demand) {
         super(dateId);
         this.item = item;
         this.dueDateId = dueDateId;

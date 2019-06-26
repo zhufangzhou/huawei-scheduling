@@ -15,11 +15,11 @@ public class Plant implements Comparable<Plant> {
     private String type;
     private Map<Plant, List<Item>> transitOutMap;
     private Map<Plant, List<Item>> transitInMap;
-    private Map<Integer, Map<Item, Long>> workInProcessMap;
+    private Map<Integer, Map<Item, Double>> workInProcessMap;
     private Map<String, MachineSet> machineSetMap;
     private Map<ItemType, Integer> frozenDaysMap;
     private List<Integer> holidays;
-    private Map<Integer, Map<Item, Long>> rawMaterialPoMap;
+    private Map<Integer, Map<Item, Double>> rawMaterialPoMap;
 
     public Plant(String name, int lockedOutDays, String type) {
         this.name = name;
@@ -55,7 +55,7 @@ public class Plant implements Comparable<Plant> {
         return transitInMap;
     }
 
-    public Map<Integer, Map<Item, Long>> getWorkInProcessMap() {
+    public Map<Integer, Map<Item, Double>> getWorkInProcessMap() {
         return workInProcessMap;
     }
 
@@ -71,7 +71,7 @@ public class Plant implements Comparable<Plant> {
         return holidays;
     }
 
-    public Map<Integer, Map<Item, Long>> getRawMaterialPoMap() {
+    public Map<Integer, Map<Item, Double>> getRawMaterialPoMap() {
         return rawMaterialPoMap;
     }
 
@@ -93,8 +93,8 @@ public class Plant implements Comparable<Plant> {
         transitInMap.put(plant, value);
     }
 
-    public void putWorkInProcess(Item item, int date, long quantity) {
-        Map<Item, Long> dailyWIP = workInProcessMap.get(date);
+    public void putWorkInProcess(Item item, int date, double quantity) {
+        Map<Item, Double> dailyWIP = workInProcessMap.get(date);
         if (dailyWIP == null) {
             dailyWIP = new HashMap<>();
             workInProcessMap.put(date, dailyWIP);
@@ -106,8 +106,8 @@ public class Plant implements Comparable<Plant> {
         machineSetMap.put(machineSet.getName(), machineSet);
     }
 
-    public void putRawMaterialPo(Item item, long quantity, int date) {
-        Map<Item, Long> dailyRawMatPo = rawMaterialPoMap.get(date);
+    public void putRawMaterialPo(Item item, double quantity, int date) {
+        Map<Item, Double> dailyRawMatPo = rawMaterialPoMap.get(date);
 
         if (dailyRawMatPo == null) {
             dailyRawMatPo = new HashMap<>();

@@ -30,7 +30,7 @@ public class TransitEndEvent extends Event {
     public void trigger(State state) {
         Item item = instruction.getItem();
         Plant plant = instruction.getTransit().getToPlant();
-        long quantity = instruction.getQuantity();
+        double quantity = instruction.getQuantity();
 
 //        state.addInventory(item, plant, quantity);
     }

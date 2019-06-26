@@ -263,8 +263,8 @@ public class Environment {
 
                 Item item = itemMap.get(df.formatCellValue(row.getCell(0)));
                 int date = Integer.valueOf(df.formatCellValue(row.getCell(1)));
-                long odem = Long.valueOf(df.formatCellValue(row.getCell(2))); // order demand
-                long fdem = Long.valueOf(df.formatCellValue(row.getCell(3))); // forecast demand
+                double odem = Double.valueOf(df.formatCellValue(row.getCell(2))); // order demand
+                double fdem = Double.valueOf(df.formatCellValue(row.getCell(3))); // forecast demand
 
                 TimePeriod timePeriod = timePeriodMap.get(date);
                 int dueDate = timePeriod.dueDate();
@@ -331,7 +331,7 @@ public class Environment {
                 row = sheet.getRow(i);
 
                 Item item = itemMap.get(df.formatCellValue(row.getCell(0)));
-                long quantity = Long.valueOf(df.formatCellValue(row.getCell(1)));
+                double quantity = Double.valueOf(df.formatCellValue(row.getCell(1)));
                 Plant plant = plantMap.get(df.formatCellValue(row.getCell(2)));
 
                 item.getInitInventoryMap().put(plant, quantity);
@@ -403,7 +403,7 @@ public class Environment {
 
                 Item item = itemMap.get(df.formatCellValue(row.getCell(0)));
                 int date = Integer.valueOf(df.formatCellValue(row.getCell(1)));
-                long quantity = Long.valueOf(df.formatCellValue(row.getCell(2)));
+                double quantity = Double.valueOf(df.formatCellValue(row.getCell(2)));
                 Plant plant = plantMap.get(df.formatCellValue(row.getCell(3)));
 
                 int dateIndex = TimePeriod.gap(startDate, date);
@@ -440,10 +440,10 @@ public class Environment {
                 }
                 int date = Integer.valueOf(df.formatCellValue(row.getCell(2)));
                 TimePeriod timePeriod = timePeriodMap.get(date);
-                long quantity = Long.valueOf(df.formatCellValue(row.getCell(3)));
+                double quantity = Double.valueOf(df.formatCellValue(row.getCell(3)));
 
-                Map<Plant, Map<Integer, Long>> frozenProdMap = item.getFrozenProductionMap();
-                Map<Integer, Long> plantFrozenProdMap = frozenProdMap.get(plant);
+                Map<Plant, Map<Integer, Double>> frozenProdMap = item.getFrozenProductionMap();
+                Map<Integer, Double> plantFrozenProdMap = frozenProdMap.get(plant);
 
                 if (plantFrozenProdMap == null) {
                     plantFrozenProdMap = new HashMap<>();
@@ -463,7 +463,7 @@ public class Environment {
                 if (item == null) {
                     System.out.println("Unknown item:" + df.formatCellValue(row.getCell(0)));
                 }
-                long quantity = Integer.valueOf(df.formatCellValue(row.getCell(1)));
+                double quantity = Double.valueOf(df.formatCellValue(row.getCell(1)));
                 int date = Integer.valueOf(df.formatCellValue(row.getCell(2)));
                 Plant plant = plantMap.get(df.formatCellValue(row.getCell(3)));
 
@@ -521,7 +521,7 @@ public class Environment {
             }
             // the plants purchasing the materials can also hold the items
             for (Plant plant : plantMap.values()) {
-                for (Map<Item, Long> dailyMap : plant.getRawMaterialPoMap().values()) {
+                for (Map<Item, Double> dailyMap : plant.getRawMaterialPoMap().values()) {
                     for (Item item : dailyMap.keySet()) {
                         item.getPlants().add(plant);
                     }

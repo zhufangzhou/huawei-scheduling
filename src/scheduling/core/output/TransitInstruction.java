@@ -6,9 +6,9 @@ import scheduling.core.input.Transit;
 
 public class TransitInstruction extends Instruction {
     private Transit transit;
-    private long quantity;
+    private double quantity;
 
-    public TransitInstruction(int startDate, int endDate, Item item, Transit transit, long quantity) {
+    public TransitInstruction(int startDate, int endDate, Item item, Transit transit, double quantity) {
         super(startDate, endDate, item);
         this.transit = transit;
         this.quantity = quantity;
@@ -22,11 +22,11 @@ public class TransitInstruction extends Instruction {
         this.transit = transit;
     }
 
-    public long getQuantity() {
+    public double getQuantity() {
         return quantity;
     }
 
-    public void setQuantity(long quantity) {
+    public void setQuantity(double quantity) {
         this.quantity = quantity;
     }
 

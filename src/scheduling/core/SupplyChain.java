@@ -24,10 +24,10 @@ public class SupplyChain implements Comparable<SupplyChain> {
     protected Plant plant; // the plant that provides the item.
     protected boolean active; // whether it is active or not.
     protected boolean prodActive; // whether the production stream is active or not.
-    protected long maxQuantity; // the max quantity of all the current active streams.
+    protected double maxQuantity; // the max quantity of all the current active streams.
     protected long maxProdQuantity; // the max production quantity of the active stream
 
-    protected long inventory; // the free inventory of the item in the plant.
+    protected double inventory; // the free inventory of the item in the plant.
     protected Production production; // the production
     protected Map<BomComponent, SupplyChain> bomStreamMap;
     protected Map<Transit, SupplyChain> transitStreamMap;
@@ -97,19 +97,19 @@ public class SupplyChain implements Comparable<SupplyChain> {
         this.prodActive = prodActive;
     }
 
-    public long getMaxQuantity() {
+    public double getMaxQuantity() {
         return maxQuantity;
     }
 
-    public void setMaxQuantity(long maxQuantity) {
+    public void setMaxQuantity(double maxQuantity) {
         this.maxQuantity = maxQuantity;
     }
 
-    public long getInventory() {
+    public double getInventory() {
         return inventory;
     }
 
-    public void setInventory(long inventory) {
+    public void setInventory(double inventory) {
         this.inventory = inventory;
     }
 
@@ -275,7 +275,7 @@ public class SupplyChain implements Comparable<SupplyChain> {
                         SupplyChain chain = bomStreamMap.get(component);
                         chain.activateStreams(schedule, prodStartTime, visited);
 
-                        long q = chain.getMaxQuantity()/component.getQuantity();
+                        long q = (long)(chain.getMaxQuantity()/component.getQuantity());
 
                         if (maxProdQuantity > q)
                             maxProdQuantity = q;
@@ -303,7 +303,7 @@ public class SupplyChain implements Comparable<SupplyChain> {
             }
 
             // activate the streams
-            maxQuantity = 0l;
+            maxQuantity = 0d;
             if (leadTime < Integer.MAX_VALUE) {
                 active = true;
                 this.dateId = dateId;
@@ -479,10 +479,10 @@ public class SupplyChain implements Comparable<SupplyChain> {
      * @param quantity the quantity of the item provided.
      * @param schedule the schedule.
      */
-    public void addToSchedule(int dateId, long quantity, Schedule schedule) {
+    public void addToSchedule(int dateId, double quantity, Schedule schedule) {
 //        System.out.println("add supply chain " + toString() + " in day " + dateId);
-        long left = quantity;
-        long provideQuantity;
+        double left = quantity;
+        double provideQuantity;
 
         // first try direct supply from inventory
         if (inventory > 0) {
@@ -512,7 +512,7 @@ public class SupplyChain implements Comparable<SupplyChain> {
             // add all the bom streams to the schedule
             for (BomComponent component : bomStreamMap.keySet()) {
                 SupplyChain chain = bomStreamMap.get(component);
-                long chainQuantity = prodQuantity*component.getQuantity();
+                double chainQuantity = prodQuantity*component.getQuantity();
 
                 chain.addToSchedule(prodStartDateId, chainQuantity, schedule);
             }
