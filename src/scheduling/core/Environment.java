@@ -1,6 +1,7 @@
 package scheduling.core;
 
 import io.ExcelProcessor;
+import org.apache.commons.math3.util.Pair;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -28,6 +29,8 @@ public class Environment {
     private Map<String, Plant> plantMap;
     private Map<String, MachineSet> machineSetMap;
     private List<Transit> transits;
+    private Map<Item, Map<Plant, SupplyChain>> supplyChainMap; // the supply chain of each item at each plant
+
 //    private Map<Pair<Plant, Plant>, Integer> transitCostMap;
 //    private Map<Pair<Plant, Plant>, Integer> transitLeadTimeMap;
 
@@ -91,6 +94,14 @@ public class Environment {
 
     public void setTransits(List<Transit> transits) {
         this.transits = transits;
+    }
+
+    public Map<Item, Map<Plant, SupplyChain>> getSupplyChainMap() {
+        return supplyChainMap;
+    }
+
+    public void setSupplyChainMap(Map<Item, Map<Plant, SupplyChain>> supplyChainMap) {
+        this.supplyChainMap = supplyChainMap;
     }
 
     public int getStartDate() {
@@ -519,6 +530,7 @@ public class Environment {
             for (Item item : itemMap.values()) {
                 item.calcPlants();
             }
+
             // the plants purchasing the materials can also hold the items
             for (Plant plant : plantMap.values()) {
                 for (Map<Item, Double> dailyMap : plant.getRawMaterialPoMap().values()) {
@@ -531,6 +543,9 @@ public class Environment {
             // calculate the dependent items
             environment.calcDependentItems();
 
+            // initialise the supply chain map of the environment
+            environment.initSupplyChainMap();
+
             // Closing the workbook
             wb.close();
         } catch(Exception ioe) {
@@ -538,6 +553,64 @@ public class Environment {
         }
 
         return environment;
+    }
+
+    public void initSupplyChainMap() {
+        supplyChainMap = new HashMap<>();
+
+        for (Item item : itemMap.values()) {
+            Map<Plant, SupplyChain> map = new HashMap<>();
+
+//            System.out.println("initialise chain for " + item.toString());
+
+            for (Plant plant : item.getPlants()) {
+//                System.out.println("initialising chain [" + item.toString() + ", " + plant.toString() + "]");
+
+                map.put(plant, new SupplyChain(item, plant));
+            }
+
+            supplyChainMap.put(item, map);
+        }
+
+        // link the supply chains through bom streams
+        for (Item item : itemMap.values()) {
+            for (Plant plant : item.getPlants()) {
+                SupplyChain targetChain = supplyChainMap.get(item).get(plant);
+
+                Production production = targetChain.getProduction();
+
+                if (production != null) {
+                    for (BomComponent component : production.getBom()) {
+                        Item material = component.getMaterial();
+                        SupplyChain chain = supplyChainMap.get(material).get(plant);
+                        targetChain.getBomStreamMap().put(component, chain);
+                    }
+                }
+            }
+        }
+
+        // link the supply chains through transit streams
+        for (Item item : itemMap.values()) {
+            for (Plant plant : item.getPlants()) {
+                SupplyChain targetChain = supplyChainMap.get(item).get(plant);
+
+//                System.out.println("target chain [" + item.toString() + ", " + plant.toString() + "]");
+
+                for (Plant fromPlant : plant.getTransitInMap().keySet()) {
+                    // check whether one can transit the item between the plants
+                    if (!plant.getTransitInMap().get(fromPlant).contains(item))
+                        continue;
+
+                    Pair<Plant, Plant> pair = new Pair<>(fromPlant, plant);
+                    Transit transit = item.getTransitMap().get(pair);
+                    SupplyChain sourceChain = supplyChainMap.get(item).get(fromPlant);
+
+//                    System.out.println(item.toString() + ", " + plant.toString() + " <- " + fromPlant.toString());
+
+                    targetChain.getTransitStreamMap().put(transit, sourceChain);
+                }
+            }
+        }
     }
 
     /**

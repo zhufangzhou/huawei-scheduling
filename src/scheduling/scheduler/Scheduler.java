@@ -83,7 +83,7 @@ public abstract class Scheduler {
 
         for (int d = dateId; d < latestDateId; d++) {
             Set<SupplyChain> visited = new HashSet<>();
-            for (SupplyChain chain : state.getSupplyChainMap().get(item).values()) {
+            for (SupplyChain chain : state.getEnv().getSupplyChainMap().get(item).values()) {
                 chain.activateStreams(schedule, d, visited);
 
                 if (chain.isActive()) {

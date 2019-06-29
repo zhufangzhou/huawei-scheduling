@@ -14,10 +14,20 @@ import scheduling.simulation.tiebreaker.SimpleTieBreaker;
 
 import java.util.*;
 
+/**
+ * The greedy static scheduler takes a static problem,
+ * and generates the planned schedule using a greedy heuristic.
+ * It first sorts all the demands using a demand ranker.
+ * Then for each sorted demand, it repeatedly finds the next supply chain to supply it.
+ * It goes to the next demand if the current one cannot be supplied anymore.
+ * The whole process stops when all the demands have been tried to supply.
+ */
+
 public class GreedyStaticScheduler extends Scheduler {
+    private Comparator<Demand> demandRanker = new UrgentDemandFirst();
     private PriorityRule<SupplyChain> chainRule = new ShortestChainFirst();
     private TieBreaker<SupplyChain> chainTB = new SimpleTieBreaker<>();
-    private Comparator<Demand> demandRanker = new UrgentDemandFirst();
+
 
     public GreedyStaticScheduler() {
     }
@@ -34,7 +44,6 @@ public class GreedyStaticScheduler extends Scheduler {
                 demands.add(od);
             }
 
-            TreeMap<Integer, Demand> fdMap = new TreeMap<>();
             for (int dateId : item.getForecastDemandMap().keySet()) {
                 Demand fd = new ForecastDemand(dateId, item, item.getForecastDemandMap().get(dateId));
                 demands.add(fd);
