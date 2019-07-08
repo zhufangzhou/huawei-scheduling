@@ -4,6 +4,11 @@ import scheduling.core.input.Demand;
 
 import java.util.Comparator;
 
+/**
+ * This is a demand ranker.
+ * It sorts the demands based on the priority of the urgency of the demands.
+ */
+
 public class UrgentDemandFirst implements Comparator<Demand> {
 
     @Override

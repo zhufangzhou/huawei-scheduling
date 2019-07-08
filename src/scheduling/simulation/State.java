@@ -23,6 +23,7 @@ public class State {
 
     private int dateIndex; // the current date index
 
+    private List<Demand> demands; // the demand list
     private Map<Integer, List<Item>> orderDemMap; // the daily ordered demands (items)
     private Map<Integer, List<Item>> forecastDemMap; // the daily forecast demands (items)
 
@@ -35,7 +36,7 @@ public class State {
         this.plannedSchedule = plannedSchedule;
         this.executedSchedule = executedSchedule;
 
-        initDemMaps();
+        initDemandInfo();
     }
 
     /**
@@ -48,7 +49,7 @@ public class State {
         plannedSchedule = new Schedule();
         executedSchedule = new Schedule();
 
-        initDemMaps();
+        initDemandInfo();
 
         plannedSchedule.initWithState(this);
     }
@@ -96,6 +97,14 @@ public class State {
         this.executedSchedule = executedSchedule;
     }
 
+    public List<Demand> getDemands() {
+        return demands;
+    }
+
+    public void setDemands(List<Demand> demands) {
+        this.demands = demands;
+    }
+
     public Map<Integer, List<Item>> getOrderDemMap() {
         return orderDemMap;
     }
@@ -113,9 +122,25 @@ public class State {
     }
 
     /**
-     * Initialise the order demand map and forecast demand map.
+     * Initialise the demand information:
+     * the list of demands, order demand map and forecast demand map.
      */
-    public void initDemMaps() {
+    public void initDemandInfo() {
+        // initialise the list of all demands
+        demands = new LinkedList<>();
+        for (Item item : env.getItemMap().values()) {
+            for (int dateId : item.getOrderDemandMap().keySet()) {
+                Demand od = new OrderDemand(dateId, item, item.getOrderDemandMap().get(dateId));
+                demands.add(od);
+            }
+
+            for (int dateId : item.getForecastDemandMap().keySet()) {
+                Demand fd = new ForecastDemand(dateId, item, item.getForecastDemandMap().get(dateId));
+                demands.add(fd);
+            }
+        }
+
+        // initialise the demand maps
         orderDemMap = new HashMap<>();
         forecastDemMap = new HashMap<>();
 
@@ -143,7 +168,7 @@ public class State {
     }
 
     public static void main(String[] args) {
-        File file = new File("data/e_vuw_test_multi_plant_01.xlsx");
+        File file = new File("data/e_vuw_test_multi_plant_31.xlsx");
 
         State staticProb = State.staticProbFromFile(file);
 

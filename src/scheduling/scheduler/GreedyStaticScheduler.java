@@ -28,7 +28,6 @@ public class GreedyStaticScheduler extends Scheduler {
     private PriorityRule<SupplyChain> chainRule = new ShortestChainFirst();
     private TieBreaker<SupplyChain> chainTB = new SimpleTieBreaker<>();
 
-
     public GreedyStaticScheduler() {
     }
 
@@ -37,18 +36,19 @@ public class GreedyStaticScheduler extends Scheduler {
         Schedule schedule = state.getPlannedSchedule();
 
         // generate the list of all demands
-        List<Demand> demands = new ArrayList<>();
-        for (Item item : state.getEnv().getItemMap().values()) {
-            for (int dateId : item.getOrderDemandMap().keySet()) {
-                Demand od = new OrderDemand(dateId, item, item.getOrderDemandMap().get(dateId));
-                demands.add(od);
-            }
-
-            for (int dateId : item.getForecastDemandMap().keySet()) {
-                Demand fd = new ForecastDemand(dateId, item, item.getForecastDemandMap().get(dateId));
-                demands.add(fd);
-            }
-        }
+        List<Demand> demands = state.getDemands();
+//        List<Demand> demands = new ArrayList<>();
+//        for (Item item : state.getEnv().getItemMap().values()) {
+//            for (int dateId : item.getOrderDemandMap().keySet()) {
+//                Demand od = new OrderDemand(dateId, item, item.getOrderDemandMap().get(dateId));
+//                demands.add(od);
+//            }
+//
+//            for (int dateId : item.getForecastDemandMap().keySet()) {
+//                Demand fd = new ForecastDemand(dateId, item, item.getForecastDemandMap().get(dateId));
+//                demands.add(fd);
+//            }
+//        }
 
         Collections.sort(demands, demandRanker);
 

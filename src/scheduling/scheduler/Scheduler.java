@@ -59,7 +59,8 @@ public abstract class Scheduler {
             demand.supplied(nextChain, suppQuantity, schedule);
             schedule.getSupplyChainMap().put(nextChain.cloneActive(), suppQuantity);
 
-            left -= suppQuantity;
+//            left -= suppQuantity;
+            left = demand.getQuantity();
             nextDateId = nextChain.getDateId(); // the next chains cannot be earlier than this one
         }
     }

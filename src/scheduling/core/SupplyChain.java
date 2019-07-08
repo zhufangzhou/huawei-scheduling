@@ -2,11 +2,9 @@ package scheduling.core;
 
 import org.apache.commons.math3.util.Pair;
 import scheduling.core.input.*;
+import scheduling.simulation.State;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * A supply chain is a chain of supplies/productions/transits.
@@ -333,13 +331,87 @@ public class SupplyChain implements Comparable<SupplyChain> {
             }
         }
 
-        // calculate the costs based on the active streams
-        calcHoldingCost(schedule, dateId, new HashSet<>());
-        calcProductionCost(new HashSet<>());
-        calcTransitCost(new HashSet<>());
+        calcLength();
+        calcCosts(schedule, dateId, new HashSet<>());
+    }
 
-        totalCost = holdingCost+productionCost+transitCost;
+    /**
+     * Reactivate the supply chain based on its current active streams given a schedule,
+     * under the new state.
+     * @param schedule the schedule.
+     * @param newState the new state.
+     */
+    public void reactivate(Schedule schedule, State newState) {
+        // relink the item and plant to the objects in the new state
+        item = newState.getEnv().getItemMap().get(item.getId());
+        plant = newState.getEnv().getPlantMap().get(plant.getName());
 
+        if (inventory > 0) {
+            // the preplanned is to directly supply from the inventory
+            // check the inventory in the new environment
+            inventory = schedule.getInventoryMap().get(dateId).get(item).get(plant).getFree();
+
+            maxQuantity = inventory;
+        } else {
+            // the preplanned is not from the inventory
+            // check all the active production and transit streams
+            maxQuantity = 0d;
+
+            List<SupplyChain> removed = new ArrayList<>();
+            for (SupplyChain chain : transitStreamMap.values()) {
+                // reactivate each transit stream
+                chain.reactivate(schedule, newState);
+
+                if (!chain.isActive()) {
+                    removed.add(chain);
+                    continue;
+                }
+
+                maxQuantity += chain.getMaxQuantity();
+            }
+
+            transitStreamMap.remove(removed);
+
+            if (prodActive) {
+                int prodStartTime = dateId-production.getLeadTime();
+                // reactive the production stream
+                maxProdQuantity = production.maxQuantityFromCapacity(prodStartTime);
+                if (maxProdQuantity > production.getMaxProduction())
+                    maxProdQuantity = production.getMaxProduction();
+
+                for (BomComponent component : bomStreamMap.keySet()) {
+                    SupplyChain chain = bomStreamMap.get(component);
+                    chain.reactivate(schedule, newState);
+
+                    long q = (long)(chain.getMaxQuantity()/component.getQuantity());
+
+                    if (maxProdQuantity > q)
+                        maxProdQuantity = q;
+
+                    if (maxProdQuantity == 0) {
+                        prodActive = false;
+                        production = null;
+                        bomStreamMap.clear();
+                    }
+                }
+
+                maxQuantity += maxProdQuantity;
+            }
+        }
+
+        if (maxQuantity == 0) {
+            active = false;
+            return;
+        }
+
+        calcLength();
+        calcCosts(schedule, dateId, new HashSet<>());
+    }
+
+    /**
+     * Calculate the length (number of steps) of the supply chain.
+     */
+    public void calcLength() {
         // calculate the length based on the active streams
         length = 0;
 
@@ -373,18 +445,20 @@ public class SupplyChain implements Comparable<SupplyChain> {
     }
 
     /**
-     * Calculate the holding cost for providing one item by the supply chain.
+     * Calculate the costs (holding, production, transit and total) for providing one item by the supply chain.
      * @param schedule the schedule.
      * @param dateId the date id to provide the item.
      * @param visited the visited supply chains, that can be skipped.
      */
-    public void calcHoldingCost(Schedule schedule, int dateId, Set<SupplyChain> visited) {
+    public void calcCosts(Schedule schedule, int dateId, Set<SupplyChain> visited) {
         if (visited.contains(this))
             return;
 
         visited.add(this);
 
         holdingCost = 0d;
+        productionCost = 0d;
+        transitCost = 0d;
 
         if (!active)
             return;
@@ -395,81 +469,32 @@ public class SupplyChain implements Comparable<SupplyChain> {
         }
 
         if (prodActive) {
+            productionCost = production.getCost();
+
             for (BomComponent component : bomStreamMap.keySet()) {
                 SupplyChain chain = bomStreamMap.get(component);
-                chain.calcHoldingCost(schedule, dateId, visited);
+                chain.calcCosts(schedule, dateId, visited);
                 // the holding cost changed by supplying the bom component
                 holdingCost += chain.getHoldingCost()*component.getQuantity();
+                productionCost += chain.getProductionCost()*component.getQuantity();
             }
         }
-
-        for (SupplyChain chain : transitStreamMap.values()) {
-            // to avoid loop
-            if (chain.length > length)
-                continue;
-
-            if (!chain.isActive())
-                continue;
-
-            chain.calcHoldingCost(schedule, dateId, visited);
-            holdingCost += chain.getHoldingCost();
-        }
-    }
-
-    /**
-     * Calculate the production cost to providing one item by this supply chain.
-     * @param visited the visited supply chains to be skipped.
-     */
-    public void calcProductionCost(Set<SupplyChain> visited) {
-        if (visited.contains(this))
-            return;
-
-        visited.add(this);
-
-        productionCost = 0d;
-
-        if (!active || !prodActive) {
-            // the production cost is 0 if the production stream is not active
-            return;
-        }
-
-        productionCost = production.getCost();
-
-        for (BomComponent component : bomStreamMap.keySet()) {
-            SupplyChain chain = bomStreamMap.get(component);
-            chain.calcProductionCost(visited);
-
-            productionCost += chain.getProductionCost()*component.getQuantity();
-        }
-    }
-
-    /**
-     * Calculate the transit cost for providing one item by the supply chain.
-     * For now, it is simply arbitrarily choosing one source plant to transit in.
-     */
-    public void calcTransitCost(Set<SupplyChain> visited) {
-        if (visited.contains(this))
-            return;
-
-        visited.add(this);
-
-        transitCost = 0d;
-
-        if (!active)
-            return;
 
         for (Transit transit : transitStreamMap.keySet()) {
             SupplyChain chain = transitStreamMap.get(transit);
-
-            if (chain.length > length)
-                continue;
+            // to avoid loop
+//            if (chain.length > length)
+//                continue;
 
             if (chain.isActive()) {
-                chain.calcTransitCost(visited);
+                chain.calcCosts(schedule, dateId, visited);
+                holdingCost += chain.getHoldingCost();
                 transitCost = chain.getTransitCost()+transit.getCost();
-                return;
+                break;
             }
         }
+
+        totalCost = holdingCost+productionCost+transitCost;
     }
 
     /**
