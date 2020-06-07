@@ -283,6 +283,7 @@ public class Schedule {
                     double quantity = item.getInitInventoryMap().get(plant);
                     Inventory inventory = map.get(plant);
                     inventory.add(quantity);
+                    holdingCost += quantity * item.getHoldingCost();
                 }
 
                 dailyInventoryMap.put(item, map);
@@ -397,18 +398,18 @@ public class Schedule {
 //                remForcastDemMap.put(item, fdMap);
 //        }
 
-        // calculate the holding cost by summing up for all the days
-        for (int dateId = startDateId; dateId < endDateId; dateId++) {
-            for (Item item : inventoryMap.get(dateId).keySet()) {
-                double totalInventory = 0;
-
-                for (Plant plant : inventoryMap.get(dateId).get(item).keySet()) {
-                    totalInventory += inventoryMap.get(dateId).get(item).get(plant).getTotal();
-                }
-
-                holdingCost += totalInventory * item.getHoldingCost();
-            }
-        }
+//        // calculate the holding cost by summing up for all the days (Already calculated in addInventory method)
+//        for (int dateId = startDateId; dateId < endDateId; dateId++) {
+//            for (Item item : inventoryMap.get(dateId).keySet()) {
+//                double totalInventory = 0;
+//
+//                for (Plant plant : inventoryMap.get(dateId).get(item).keySet()) {
+//                    totalInventory += inventoryMap.get(dateId).get(item).get(plant).getTotal();
+//                }
+//
+//                holdingCost += totalInventory * item.getHoldingCost();
+//            }
+//        }
 
         // calculate the total delay based on accumulated delay map
         for (int dateId = startDateId; dateId < endDateId; dateId++) {

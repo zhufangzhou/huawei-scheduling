@@ -356,7 +356,7 @@ public class Environment {
                 Item item = itemMap.get(df.formatCellValue(row.getCell(0)));
                 Plant plant = plantMap.get(df.formatCellValue(row.getCell(1)));
                 double cost = Double.valueOf(df.formatCellValue(row.getCell(2)));
-                int leadTime = Integer.valueOf(df.formatCellValue(row.getCell(10))); // Integer.valueOf(df.formatCellValue(row.getCell(3)));
+                int leadTime = (int)Math.ceil(Integer.valueOf(df.formatCellValue(row.getCell(10))) / 24); // Integer.valueOf(df.formatCellValue(row.getCell(3)));
                 int preWeekProd = Integer.valueOf(df.formatCellValue(row.getCell(4)));
                 int wtdProd = Integer.valueOf(df.formatCellValue(row.getCell(5))); // week-to-date productions
                 int lotSize = 1; //[data error, all zeros] Integer.valueOf(df.formatCellValue(row.getCell(6)));

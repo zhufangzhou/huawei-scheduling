@@ -1,6 +1,5 @@
 package scheduling.simulation.event;
 
-import javafx.util.Pair;
 import scheduling.core.input.*;
 import scheduling.core.output.TransitInstruction;
 import scheduling.simulation.Event;
